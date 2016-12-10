@@ -24,6 +24,12 @@ define('app/game', [
     var game = {}
     window.game = game;
 
+    game.distance = function(obj1, obj2) {
+        const dx = obj2.x - obj1.x
+        const dy = obj2.y - obj1.y
+        return Math.sqrt(dx * dx + dy * dy)
+    }
+
     game.isInIgnoreFilter = function(mover, item) {
         var filter = [
             [Player, Punch],
@@ -143,8 +149,8 @@ define('app/game', [
 
     game.convertToScreenCoordinates = function(pos) {
         var newPos = {
-            x: pos.x + (pos.y * 0.25),
-            y: pos.y / 2,
+            x: Math.round(pos.x + (pos.y * 0.25)),
+            y: Math.round(pos.y / 2),
         }
         return newPos;
     }
@@ -208,6 +214,27 @@ define('app/game', [
             this.name = "Enemy"
             this.recover = null;
             this.movement = { x: 0, y: 0 };
+            this.walk_spritesheet = SpriteSheet.new(images.enemy_walk, {
+                frames: [200, 200],
+                x: 0,
+                y: 0,
+                width: 136 / 2,
+                height: 36,
+                restart: true,
+                autoPlay: true
+            });
+            this.jump_spritesheet = SpriteSheet.new(images.enemy_jump, {
+                frames: [40, 70, 200, 70, 40],
+                x: 0,
+                y: 0,
+                width: 340 / 5,
+                height: 72,
+                restart: false,
+                autoPlay: false,
+                callback: this.reset.bind(this)
+            });
+            this.state = 'idle';
+            this.chasingPlayer = false;
         }
         immune() {
             this.isColliding = false;
@@ -217,17 +244,36 @@ define('app/game', [
             }.bind(this))
         }
         hurt(direction) {
-            this.movement.x = direction.x * 20;
-            this.movement.y = direction.y * 20;
-            //this.destroy();
+            this.movement.x = direction.x * 27;
+            this.movement.y = direction.y * 27;
+            this.chasingPlayer = true;
+            this.state = 'idle';
+        }
+        reset() {
+            this.recover = null;
+            this.isColliding = true;
+            this.state = 'idle';
+        }
+        prepareForJump() {
+            this.state = 'preparing';
+            this.recover = new TimedAction(2000, function() {
+                this.reset();
+                this.state = 'jumping';
+                this.movement.x = 20;
+                this.movement.y = 0;
+                this.jump_spritesheet.stop();
+                this.jump_spritesheet.play();
+            }.bind(this))
         }
         tick() {
+            this.walk_spritesheet.tick();
+            this.jump_spritesheet.tick();
             this.recover && this.recover.tick();
             
             if (Math.abs(this.movement.x) > 0.1 || Math.abs(this.movement.y) > 0.1) {
                 //Enemy is sliding across the floor
-                this.movement.x = this.movement.x * 0.9;
-                this.movement.y = this.movement.y * 0.9;
+                this.movement.x = this.movement.x * 0.94;
+                this.movement.y = this.movement.y * 0.94;
                 var attemptedHitBox = {
                     x: this.hitbox.x + this.movement.x,
                     y: this.hitbox.y + this.movement.y,
@@ -240,9 +286,25 @@ define('app/game', [
                 this.movement.x = 0;
                 this.movement.y = 0;
             }
+
+            if (this.state === 'preparing') {
+                return;
+            } else {
+                if (this.chasingPlayer) {
+                    if (game.distance(this.hitbox, player.hitbox) < 220) {
+                        this.prepareForJump();
+                    } else {
+                        this.resolveChase();
+                    }
+                }
+            }
+        }
+        resolveChase() {
+            var movementX = (player.hitbox.x > this.hitbox.x) ? 1 : -1;
+            var movementY = (player.hitbox.y > this.hitbox.y) ? 1 : -1;
             var attemptedHitBox = {
-                x: this.hitbox.x,
-                y: this.hitbox.y,
+                x: this.hitbox.x + movementX,
+                y: this.hitbox.y + movementY,
                 width: this.hitbox.width,
                 height: this.hitbox.height,
             }
@@ -250,9 +312,40 @@ define('app/game', [
         }
         draw3d(context) {
             if (!this.isColliding) context.globalAlpha = 0.5;
-            var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            context.drawImage(images.enemy, screenPos.x, screenPos.y - images.enemy.height + 20);
+            
+            switch (this.state) {
+                case 'preparing':
+                    this.draw3dPreparing(context);
+                break;
+                case 'jumping':
+                    this.draw3dJumping(context);
+                break;
+                case 'idle':
+                    if (this.chasingPlayer) {
+                        this.draw3dRunning(context)
+                    }
+                break;
+            }
+
             context.globalAlpha = 1;
+        }
+        draw3dRunning() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.enemy_walk.height + 20)
+            this.walk_spritesheet.draw(context);
+            context.restore();
+        }
+        draw3dJumping() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.enemy_jump.height + 20)
+            this.jump_spritesheet.draw(context);
+            context.restore();
+        }
+        draw3dPreparing() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.drawImage(images.enemy_preparing, screenPos.x, screenPos.y - images.enemy_preparing.height + 20);
         }
     }
 
