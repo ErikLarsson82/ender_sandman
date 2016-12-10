@@ -16,7 +16,7 @@ define('app/game', [
     utils
 ) {    
     var DEBUG_WRITE_BUTTONS = false;
-    var DEBUG_NO_2D = false;
+    var DEBUG_NO_2D = true;
     var DEBUG_KEYBOARD = false;
     
     const TILE_SIZE = 14 * 4;
@@ -223,9 +223,9 @@ define('app/game', [
         damage() {
             this.hp--;
         }
-        draw() {
+        draw3d() {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            context.drawImage(images.crib, screenPos.x, screenPos.y - images.crib.height + 20);
+            context.drawImage(images.crib, screenPos.x - 50, screenPos.y - 50);
         }
     }
 
@@ -242,7 +242,7 @@ define('app/game', [
                 x: 0,
                 y: 0,
                 width: 136 / 2,
-                height: 36,
+                height: 72,
                 restart: true,
                 autoPlay: true
             });
@@ -383,6 +383,12 @@ define('app/game', [
         draw3d(context) {
             if (!this.isColliding) context.globalAlpha = 0.5;
             
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.enemy_shadow.height + 20)
+            context.drawImage(images.enemy_shadow, 0, 0);
+            context.restore();
+
             switch (this.state) {
                 case 'preparing':
                     this.draw3dPreparing(context);
@@ -393,6 +399,8 @@ define('app/game', [
                 case 'idle':
                     if (this.chasingPlayer) {
                         this.draw3dRunning(context)
+                    } else {
+                        this.draw3dSleeping();
                     }
                 break;
                 case 'hurt':
@@ -410,6 +418,13 @@ define('app/game', [
             context.save();
             context.translate(screenPos.x, screenPos.y - images.enemy_walk.height + 20)
             this.walk_spritesheet.draw(context);
+            context.restore();
+        }
+        draw3dSleeping() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.enemy_sleep.height + 20)
+            context.drawImage(images.enemy_sleep, 0, 0)
             context.restore();
         }
         draw3dJumping() {
@@ -441,6 +456,7 @@ define('app/game', [
             super(config);
             this.color = "#cccccc"
             this.name = "Player"
+            this.state = 'idle';
             this.action = null;
             this.previousDirectionX = 1;
             this.previousDirectionY = 0;
@@ -450,6 +466,35 @@ define('app/game', [
                 y: 0
             }
             this.immunityTimer = null;
+
+            this.walk_spritesheet = SpriteSheet.new(images.player_walk, {
+                frames: [200, 200],
+                x: 0,
+                y: 0,
+                width: 136 / 2,
+                height: 84,
+                restart: true,
+                autoPlay: true
+            });
+            this.swing_spritesheet = SpriteSheet.new(images.player_swing, {
+                frames: [200, 200],
+                x: 0,
+                y: 0,
+                width: 136 / 2,
+                height: 84,
+                restart: false,
+                autoPlay: false,
+                callback: this.reset.bind(this)
+            });
+            this.idle_spritesheet = SpriteSheet.new(images.player_idle, {
+                frames: [400, 400],
+                x: 0,
+                y: 0,
+                width: 136 / 2,
+                height: 84,
+                restart: true,
+                autoPlay: true
+            });
         }
         hurt(dmg) {
             if (dmg === 0) return;
@@ -462,8 +507,12 @@ define('app/game', [
         reset() {
             this.action = null;
             this.isColliding = true;
+            this.state = 'idle';
         }
         punch() {
+            this.state = 'punch';
+            this.swing_spritesheet.stop();
+            this.swing_spritesheet.play();
             this.movement.x = this.previousDirectionX * 30;
             this.movement.y = this.previousDirectionY * 30;
             var punchConfig = {
@@ -487,6 +536,10 @@ define('app/game', [
             this.previousDirectionY = y;
         }
         tick(delta) {
+            this.walkedThisTick = false;
+            this.swing_spritesheet.tick();
+            this.idle_spritesheet.tick();
+
             var pad = userInput.getInput(0);
             debugWriteButtons(pad);
             this.setDirection(pad.axes[0], pad.axes[1]);
@@ -509,9 +562,15 @@ define('app/game', [
             if (pad.buttons[2].pressed) {
                 this.punch();
             } else {
+                var xDelta = pad.axes[0] * delta / 3;
+                var yDelta = pad.axes[1] * delta / 3;
+                
+                if (Math.abs(xDelta) > 0.01 || Math.abs(yDelta) > 0.01) this.walkedThisTick = true;
+                
+                this.walk_spritesheet.tick((Math.abs(xDelta) + Math.abs(yDelta)) * 10);
                 var attemptedHitBox = {
-                    x: this.hitbox.x + pad.axes[0] * delta / 3,
-                    y: this.hitbox.y + pad.axes[1] * delta / 3,
+                    x: this.hitbox.x + xDelta,
+                    y: this.hitbox.y + yDelta,
                     width: this.hitbox.width,
                     height: this.hitbox.height,
                 }
@@ -531,9 +590,52 @@ define('app/game', [
         }
         draw3d(context) {
             if (!this.isColliding) context.globalAlpha = 0.5;
+
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            context.drawImage(images.dad, screenPos.x + 4, screenPos.y - images.dad.height + 20);
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.player_shadow.height + 26)
+            context.drawImage(images.player_shadow, 0, 0);
+            context.restore();
+            if (this.state === 'idle') {
+                (this.walkedThisTick) ? this.draw3dWalking() : this.draw3dIdle();
+            } else if (this.state === 'punch') {
+                this.draw3dSwing();
+            }
             context.globalAlpha = 1;
+
+        }
+        draw3dIdle() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.player_idle.height + 20)
+            if (this.previousDirectionX > 0) {
+                context.scale(-1, 1)
+                context.translate(-TILE_SIZE, 0)
+            }
+            this.idle_spritesheet.draw(context);
+            context.restore();
+        }
+        draw3dSwing() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.player_swing.height + 20)
+            if (this.previousDirectionX > 0) {
+                context.scale(-1, 1)
+                context.translate(-TILE_SIZE, 0)
+            }
+            this.swing_spritesheet.draw(context);
+            context.restore();
+        }
+        draw3dWalking() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.player_walk.height + 20)
+            if (this.previousDirectionX > 0) {
+                context.scale(-1, 1)
+                context.translate(-TILE_SIZE, 0)
+            }
+            this.walk_spritesheet.draw(context);
+            context.restore();
         }
     }
 
@@ -564,7 +666,7 @@ define('app/game', [
         }
         draw3d(context) {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            context.drawImage(images.punch, screenPos.x, screenPos.y - images.punch.height + 20);
+            context.drawImage(images.weapon_swing, screenPos.x, screenPos.y - images.weapon_swing.height + 20);
         }
     }
 

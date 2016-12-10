@@ -2,14 +2,32 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var background = new Image();
   background.src = "./assets/images/background.png";
 
-  var dad = new Image();
-  dad.src = "./assets/images/dad.png";
+  var player_shadow = new Image();
+  player_shadow.src = "./assets/images/player_shadow.png";
+
+  var player_idle = new Image();
+  player_idle.src = "./assets/images/player_idle.png";
+
+  var player_walk = new Image();
+  player_walk.src = "./assets/images/player_walk.png";
+
+  var player_swing = new Image();
+  player_swing.src = "./assets/images/player_swing.png";
+
+  var weapon_swing = new Image();
+  weapon_swing.src = "./assets/images/weapon_swing.png";
 
   var crib = new Image();
   crib.src = "./assets/images/crib.png";
 
   var punch = new Image();
   punch.src = "./assets/images/punch.png";
+
+  var enemy_shadow = new Image();
+  enemy_shadow.src = "./assets/images/enemy_shadow.png";
+
+  var enemy_sleep = new Image();
+  enemy_sleep.src = "./assets/images/enemy_sleep.png";
 
   var enemy_walk = new Image();
   enemy_walk.src = "./assets/images/enemy_walk.png";
@@ -26,21 +44,17 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var enemy_preparing = new Image();
   enemy_preparing.src = "./assets/images/enemy_preparing.png";
 
-  var dad_idle = SpriteSheet.new(dad, {
-    frames: [90, 90],
-    x: 0,
-    y: 0,
-    width: 14 * 4,
-    height: 21 * 4,
-    restart: true,
-  });
-
   return {
     background: background,
-    dad: dad,
+    player_shadow: player_shadow,
+    player_idle: player_idle,
+    player_swing: player_swing,
+    player_walk: player_walk,
+    weapon_swing: weapon_swing,
     crib: crib,
     punch: punch,
-    dad_idle: dad_idle,
+    enemy_sleep: enemy_sleep,
+    enemy_shadow: enemy_shadow,
     enemy_walk: enemy_walk,
     enemy_hurt: enemy_hurt,
     enemy_attack: enemy_attack,
