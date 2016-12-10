@@ -76,8 +76,8 @@ define('app/game', [
         if (game.isOfTypes(collider, collidee, Player, Tile)) {
             var tile = game.getOfType(collider, collidee, Tile);
             var player = game.getOfType(collider, collidee, Player);
-            tile.test();
-            player.test();
+            //tile.test();
+            //player.test();
         }
 
         if (game.isOfTypes(collider, collidee, Player, Enemy)) {
@@ -88,28 +88,29 @@ define('app/game', [
         }
     }
 
-    game.detectHits = function(who, hitbox) {
+    game.detectHits = function(mover, hitbox) {
         return _.filter(gameObjects, function(item) {
             if (!item.hitbox) {
                 console.error("Dimensions not found on item");
                 return false;
             }
-            if (item === who) return;
+            if (item === mover) return;
 
-            var itemIsDynamic = !item.isStatic;
 
             const condition1 = hitbox.x + hitbox.width > item.hitbox.x;
             const condition2 = hitbox.x < item.hitbox.x + item.hitbox.width;
             const condition3 = hitbox.y + hitbox.height > item.hitbox.y;
             const condition4 = hitbox.y < item.hitbox.y + item.hitbox.height;
 
-            // Who is always dynamic
-            // Condiftion 5 is true if who is colliding and that is colliding with a dynamic
-            const subCondition5 = who.isColliding && itemIsDynamic;
-            const subCondition6 = item.isStatic;
+            // mover is always dynamic
+            // subcondition 5 is true if mover is colliding and that is colliding with a dynamic
+            var moverIsDynamic = !mover.isStatic;
+            var itemIsDynamic = !item.isStatic;
+            const subCondition5 = mover.isColliding && moverIsDynamic;
+            const subCondition6 = item.isColliding && itemIsDynamic;
+            const subCondition7 = item.isStatic;
 
-            const condition5 = (subCondition5 || subCondition6)
-            //console.log(who.name, item.name, condition5);
+            const condition5 = ((subCondition5 && subCondition6) || subCondition7)
             return (condition1 && condition2 && condition3 && condition4 && condition5);
         });
     }
@@ -150,9 +151,11 @@ define('app/game', [
         tick() {
 
         }
-        draw2d() {
+        draw2d(context) {
+            if (!this.isColliding) context.globalAlpha = 0.5;
             context.fillStyle = this.color;
             context.fillRect(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
+            context.globalAlpha = 1;
         }
         draw3d() {
 
@@ -165,20 +168,24 @@ define('app/game', [
             this.isStatic = true;
             this.name = "Tile";
         }
-        test() {
-            //console.log('tile collide');
-        }
     }
 
     class Enemy extends GameObject {
         constructor(config) {
             super(config);
             this.name = "Enemy"
+            this.recover = null;
         }
         immune() {
             this.isColliding = false;
+            this.recover = new TimedAction(2000, function() {
+                this.recover = null;
+                this.isColliding = true;
+            }.bind(this))
         }
         tick() {
+            this.recover && this.recover.tick();
+            
             var attemptedHitBox = {
                 x: this.hitbox.x + 1,
                 y: this.hitbox.y + 1,
@@ -194,15 +201,18 @@ define('app/game', [
             super(config);
             this.color = "#cccccc"
             this.name = "Player"
-        }
-        test() {
-            this.color = "#ff0000"
+            this.recover = null;
         }
         hurt() {
-            console.log('i got hurt!!');
+            this.isColliding = false;
+            this.recover = new TimedAction(1000, function() {
+                this.recover = null;
+                this.isColliding = true;
+            }.bind(this))
         }
         tick(delta) {
-            return;
+            this.recover && this.recover.tick();
+
             this.color = "#cccccc"
             var pad = userInput.getInput(0);
             debugWriteButtons(pad);
@@ -295,7 +305,7 @@ define('app/game', [
                 context.save();
                 //context.transform(1, 0, 0.25, 0.5, 0, 0);
                 _.each(gameObjects, function(gameObject) {
-                    gameObject.draw2d();
+                    gameObject.draw2d(context);
                 });
                 context.restore();
             }
