@@ -22,9 +22,7 @@ define('app/game', [
     const TILE_SIZE = 14 * 4;
     var gameObjects = [];
     var game = {}
-    var player, crib;
-    window.game = game;
-
+    
     game.distance = function(obj1, obj2) {
         const dx = obj2.x - obj1.x
         const dy = obj2.y - obj1.y
@@ -218,6 +216,10 @@ define('app/game', [
             super(config);
             this.isStatic = true;
             this.name = "Crib";
+            this.hp = 15;
+        }
+        damage() {
+            this.hp--;
         }
         draw() {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
@@ -230,6 +232,7 @@ define('app/game', [
             super(config);
             this.name = "Enemy"
             this.recover = null;
+            this.hp = 5;
             this.movement = { x: 0, y: 0 };
             this.walk_spritesheet = SpriteSheet.new(images.enemy_walk, {
                 frames: [200, 200],
@@ -273,6 +276,8 @@ define('app/game', [
             this.movement.y = direction.y * 14;
             this.chasingPlayer = true;
             this.reset();
+            this.hp--;
+            if (this.hp <= 0) this.destroy();
         }
         reset() {
             this.recover = null;
@@ -281,7 +286,7 @@ define('app/game', [
         }
         prepareForJump() {
             this.state = 'preparing';
-            var angle = game.getAngle({x: this.hitbox.x - player.hitbox.x, y: this.hitbox.y - player.hitbox.y})
+            var angle = game.getAngle({x: this.hitbox.x - game.player.hitbox.x, y: this.hitbox.y - game.player.hitbox.y})
             var jumpX = Math.cos(angle) * -20;
             var jumpY = Math.sin(angle) * -20;
             this.recover = new TimedAction(2000, function() {
@@ -316,7 +321,7 @@ define('app/game', [
                 this.movement.y = 0;
             }
 
-            if (this.state === 'idle' && game.distance(this.hitbox, player.hitbox) < 200) {
+            if (this.state === 'idle' && game.distance(this.hitbox, game.player.hitbox) < 200) {
                 this.chasingPlayer = true;
             }
             if (this.state === 'preparing') {
@@ -325,7 +330,7 @@ define('app/game', [
                 this.resolveAttackCrib();
             } else {
                 if (this.chasingPlayer) {
-                    if (game.distance(this.hitbox, player.hitbox) < 220) {
+                    if (game.distance(this.hitbox, game.player.hitbox) < 220) {
                         this.prepareForJump();
                     } else {
                         this.resolveChasePlayer();
@@ -334,18 +339,18 @@ define('app/game', [
             }
         }
         resolveAttackCrib() {
-            if (game.distance(this.hitbox, crib.hitbox) < 80) {
+            if (game.distance(this.hitbox, game.crib.hitbox) < 80) {
                 if (this.recover) return;
                 this.attack_spritesheet.stop();
                 this.attack_spritesheet.play();
                 
                 this.recover = new TimedAction(2000, function() {
                     this.reset();
-                    console.log('attack');
                     this.state = 'attackingCrib';
+                    game.crib.damage();
                 }.bind(this))
             } else {
-                var angle = game.getAngle({x: this.hitbox.x - crib.hitbox.x, y: this.hitbox.y - crib.hitbox.y})
+                var angle = game.getAngle({x: this.hitbox.x - game.crib.hitbox.x, y: this.hitbox.y - game.crib.hitbox.y})
                 var movementX = Math.cos(angle) * -2;
                 var movementY = Math.sin(angle) * -2;
                 var attemptedHitBox = {
@@ -358,7 +363,7 @@ define('app/game', [
             }
         }
         resolveChasePlayer() {
-            var angle = game.getAngle({x: this.hitbox.x - player.hitbox.x, y: this.hitbox.y - player.hitbox.y})
+            var angle = game.getAngle({x: this.hitbox.x - game.player.hitbox.x, y: this.hitbox.y - game.player.hitbox.y})
             var movementX = Math.cos(angle) * -2;
             var movementY = Math.sin(angle) * -2;
             var attemptedHitBox = {
@@ -427,8 +432,10 @@ define('app/game', [
             this.isBusy = false;
             this.previousDirectionX = 1;
             this.previousDirectionY = 0;
+            this.hp = 10;
         }
         hurt() {
+            this.hp--;
             this.isColliding = false;
             this.recover = new TimedAction(1000, function() {
                 this.reset();
@@ -530,7 +537,7 @@ define('app/game', [
           _.each(row, function(column, colIdx) {
             switch(column) {
               case 1:
-                player = new Player({
+                game.player = new Player({
                     hitbox: {
                         x: colIdx * TILE_SIZE,
                         y: rowIdx * TILE_SIZE,
@@ -539,7 +546,7 @@ define('app/game', [
                     },
                     game: game,
                 });
-                gameObjects.push(player);
+                gameObjects.push(game.player);
               break;
               case 2:
                 var tile = new Tile({
@@ -580,7 +587,7 @@ define('app/game', [
                 gameObjects.push(enemy);
               break;
               case 9:
-                crib = new Crib({
+                game.crib = new Crib({
                     hitbox: {
                         x: colIdx * TILE_SIZE,
                         y: rowIdx * TILE_SIZE,
@@ -589,7 +596,7 @@ define('app/game', [
                     },
                     game: game,
                 });
-                gameObjects.push(crib);
+                gameObjects.push(game.crib);
               break;
             }
           })
@@ -627,6 +634,19 @@ define('app/game', [
                 context.restore();
             }
 
+            context.fillStyle = "white"
+            context.fillRect(20, 20, 300, 30)
+            context.fillStyle = "black"
+            context.fillRect(22, 22, 296, 26)
+            context.fillStyle = "blue"
+            context.fillRect(24, 24, (game.crib.hp / 15) * 292, 22)
+
+            context.fillStyle = "white"
+            context.fillRect(320 + 20, 20, 300, 30)
+            context.fillStyle = "black"
+            context.fillRect(320 + 22, 22, 296, 26)
+            context.fillStyle = "red"
+            context.fillRect(320 + 24, 24, (game.player.hp / 10) * 292, 22)
 
             context.save()
             context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
