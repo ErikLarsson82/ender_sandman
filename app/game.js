@@ -411,7 +411,12 @@ define('app/game', [
                     this.draw3dHurt(context)
                 break;
                 case 'attackingCrib':
-                    this.draw3dAttack(context)
+                    if (game.distance(this.hitbox, game.crib.hitbox) < 80) {
+                        this.draw3dAttack(context) 
+                    } else {
+                        this.draw3dRunning(context)
+                    }
+
                 break;
             }
 
