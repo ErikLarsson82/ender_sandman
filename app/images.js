@@ -8,6 +8,12 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var goodnight_text = new Image();
   goodnight_text.src = "./assets/images/goodnight_text.png";
 
+  var text1 = new Image();
+  text1.src = "./assets/images/text1.png";
+
+  var text2 = new Image();
+  text2.src = "./assets/images/text2.png";
+
   var safe_kiddo = new Image();
   safe_kiddo.src = "./assets/images/safe_now.png";
 
@@ -57,6 +63,8 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
     background: background,
     gameover: gameover,
     goodnight_text: goodnight_text,
+    text1: text1,
+    text2: text2,
     safe_kiddo: safe_kiddo,
     player_shadow: player_shadow,
     player_idle: player_idle,

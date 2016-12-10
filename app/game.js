@@ -411,7 +411,7 @@ define('app/game', [
         }
     }
 
-    class GoodNight {
+    /*class GoodNight {
         constructor() {
             this.x = 191;
             this.y = 312;
@@ -419,7 +419,7 @@ define('app/game', [
         draw(context) {
             context.drawImage(images.goodnight_text, this.x, this.y);
         }
-    }
+    }*/
 
     class Crib extends GameObject {
         constructor(config) {
@@ -701,6 +701,40 @@ define('app/game', [
         }
     }
 
+    class TextSwitcher {
+        constructor() {
+            this.idx = 0;
+            this.texts = [
+                images.text1,
+                images.text2,
+                images.goodnight_text
+            ]
+            this.counter = 0;
+        }
+        switch() {
+            if (this.idx === -1) {
+                this.idx = 0;
+            } else {
+                this.idx++
+            }
+            if (this.idx > this.texts.length) {
+                this.idx === 999;
+            }
+            return this.idx;
+        }
+        tick() {
+            this.counter++;
+            if (this.counter > 200) {
+                this.counter = 0;
+                this.idx++;
+            }
+        }
+        renderText(context, pos) {
+            if (this.texts[this.idx] === undefined) return;
+            context.drawImage(this.texts[this.idx], pos.x, pos.y);
+        }
+    }
+
     class Player extends GameObject {
         constructor(config) {
             super(config);
@@ -711,6 +745,7 @@ define('app/game', [
             this.previousDirectionX = 1;
             this.previousDirectionY = 0;
             this.hp = 10;
+            this.textSwitcher = new TextSwitcher();
             this.movement = {
                 x: 0,
                 y: 0
@@ -790,6 +825,7 @@ define('app/game', [
             this.previousDirectionY = y;
         }
         tick(delta) {
+            this.textSwitcher.tick();
             this.walkedThisTick = false;
             this.swing_spritesheet.tick();
             this.idle_spritesheet.tick();
@@ -813,17 +849,33 @@ define('app/game', [
             }
             this.color = "#cccccc";
 
-            (game.calm) ? this.handleCalm(pad) : this.handleUserInput(pad, delta);
+            (game.calm) ? this.handleCalm(pad, delta) : this.handleUserInput(pad, delta);
         }
-        handleCalm(pad) {
+        handleCalm(pad, delta) {
             if (pad.buttons[2].pressed) {
                 game.loadEnemies();
                 game.calm = false;
                 game.playSound('music_intro', true);
                 game.playSound('darkness')
-                game.goodnightText = null;
+                //game.goodnightText = null;
                 this.hasReleasedButton = false;
             }
+            this.handleArrows(pad, delta, 10)
+        }
+        handleArrows(pad, delta, speed) {
+            var xDelta = pad.axes[0] * delta / speed;
+            var yDelta = pad.axes[1] * delta / speed;
+
+            if (Math.abs(xDelta) > 0.01 || Math.abs(yDelta) > 0.01) this.walkedThisTick = true;
+
+            this.walk_spritesheet.tick((Math.abs(xDelta) + Math.abs(yDelta)) * 10);
+            var attemptedHitBox = {
+                x: this.hitbox.x + xDelta,
+                y: this.hitbox.y + yDelta,
+                width: this.hitbox.width,
+                height: this.hitbox.height,
+            }
+            this.game.attemptMove(this, attemptedHitBox);
         }
         handleUserInput(pad, delta) {
             if (pad.buttons[2].pressed === false && this.hasReleasedButton === false) {
@@ -833,19 +885,7 @@ define('app/game', [
                 this.hasReleasedButton = false;
                 this.punch();
             } else {
-                var xDelta = pad.axes[0] * delta / 3;
-                var yDelta = pad.axes[1] * delta / 3;
-
-                if (Math.abs(xDelta) > 0.01 || Math.abs(yDelta) > 0.01) this.walkedThisTick = true;
-
-                this.walk_spritesheet.tick((Math.abs(xDelta) + Math.abs(yDelta)) * 10);
-                var attemptedHitBox = {
-                    x: this.hitbox.x + xDelta,
-                    y: this.hitbox.y + yDelta,
-                    width: this.hitbox.width,
-                    height: this.hitbox.height,
-                }
-                this.game.attemptMove(this, attemptedHitBox);
+                this.handleArrows(pad, delta, 3);
             }
         }
         move() {
@@ -874,6 +914,9 @@ define('app/game', [
             }
             context.globalAlpha = 1;
 
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            screenPos.y  = screenPos.y - 100;
+            this.textSwitcher.renderText(context, screenPos)
         }
         draw3dIdle() {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
@@ -1031,7 +1074,7 @@ define('app/game', [
             game.playSound = playSound;
             game.playSound('music_intro');
             game.loadLevel();
-            game.goodnightText = new GoodNight();
+            //game.goodnightText = new GoodNight();
             game.screenShaker = new ScreenShaker();
             game.fader = new Fader();
             game.fader.fadeIn();
@@ -1094,7 +1137,7 @@ define('app/game', [
 
             context.restore();
 
-            game.goodnightText && game.goodnightText.draw(context);
+            //game.goodnightText && game.goodnightText.draw(context);
             game.safeKiddo && game.safeKiddo.draw(context);
 
             game.screenShaker.restore(context);
