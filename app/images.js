@@ -14,6 +14,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var enemy_walk = new Image();
   enemy_walk.src = "./assets/images/enemy_walk.png";
 
+  var enemy_hurt = new Image();
+  enemy_hurt.src = "./assets/images/enemy_hurt.png";
+
   var enemy_jump = new Image();
   enemy_jump.src = "./assets/images/enemy_jump.png";
 
@@ -39,6 +42,7 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
     punch: punch,
     dad_idle: dad_idle,
     enemy_walk: enemy_walk,
+    enemy_hurt: enemy_hurt,
     enemy_attack: enemy_attack,
     enemy_jump: enemy_jump,
     enemy_preparing: enemy_preparing

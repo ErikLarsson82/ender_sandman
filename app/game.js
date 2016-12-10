@@ -106,7 +106,7 @@ define('app/game', [
             var enemy = game.getOfType(collider, collidee, Enemy);
             var player = game.getOfType(collider, collidee, Player);
             //enemy.immune();
-            player.hurt();
+            player.hurt(enemy.playerDamage);
         }
 
         if (game.isOfTypes(collider, collidee, Enemy, Punch)) {
@@ -233,8 +233,9 @@ define('app/game', [
         constructor(config) {
             super(config);
             this.name = "Enemy"
-            this.recover = null;
+            this.action = null;
             this.hp = 5;
+            this.playerDamage = 1;
             this.movement = { x: 0, y: 0 };
             this.walk_spritesheet = SpriteSheet.new(images.enemy_walk, {
                 frames: [200, 200],
@@ -267,23 +268,21 @@ define('app/game', [
             this.state = (config.attackingCrib) ? 'attackingCrib' : 'idle';
             this.chasingPlayer = false;
         }
-        immune() {
-            
-        }
         hurt(direction) {
-            this.isColliding = false;
-            this.recover = new TimedAction(1000, function() {
+            this.playerDamage = 0;
+            this.state = 'hurt';
+            this.action = new TimedAction(2000, function() {
                 this.reset();
             }.bind(this))
-            this.movement.x = direction.x * 14;
-            this.movement.y = direction.y * 14;
+            this.movement.x = direction.x * 8;
+            this.movement.y = direction.y * 8;
             this.chasingPlayer = true;
             this.hp--;
             if (this.hp <= 0) this.destroy();
         }
         reset() {
-            this.recover = null;
-            this.isColliding = true;
+            this.action = null;
+            this.playerDamage = 1;
             this.state = 'idle';
         }
         prepareForJump() {
@@ -291,7 +290,7 @@ define('app/game', [
             var angle = game.getAngle({x: this.hitbox.x - game.player.hitbox.x, y: this.hitbox.y - game.player.hitbox.y})
             var jumpX = Math.cos(angle) * -20;
             var jumpY = Math.sin(angle) * -20;
-            this.recover = new TimedAction(2000, function() {
+            this.action = new TimedAction(2000, function() {
                 this.reset();
                 this.state = 'jumping';
                 this.movement.x = jumpX;
@@ -304,7 +303,6 @@ define('app/game', [
             this.walk_spritesheet.tick();
             this.jump_spritesheet.tick();
             this.attack_spritesheet.tick();
-            this.recover && this.recover.tick();
             
             if (Math.abs(this.movement.x) > 0.1 || Math.abs(this.movement.y) > 0.1) {
                 //Enemy is sliding across the floor
@@ -323,6 +321,11 @@ define('app/game', [
                 this.movement.y = 0;
             }
 
+            if (this.action) {
+                this.action.tick();
+                return;
+            }
+            
             if (this.state === 'idle' && game.distance(this.hitbox, game.player.hitbox) < 200) {
                 this.chasingPlayer = true;
             }
@@ -342,11 +345,11 @@ define('app/game', [
         }
         resolveAttackCrib() {
             if (game.distance(this.hitbox, game.crib.hitbox) < 80) {
-                if (this.recover) return;
+                if (this.action) return;
                 this.attack_spritesheet.stop();
                 this.attack_spritesheet.play();
                 
-                this.recover = new TimedAction(2000, function() {
+                this.action = new TimedAction(2000, function() {
                     this.reset();
                     this.state = 'attackingCrib';
                     game.crib.damage();
@@ -391,6 +394,9 @@ define('app/game', [
                         this.draw3dRunning(context)
                     }
                 break;
+                case 'hurt':
+                    this.draw3dHurt(context)
+                break;
                 case 'attackingCrib':
                     this.draw3dAttack(context)
                 break;
@@ -423,6 +429,10 @@ define('app/game', [
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.drawImage(images.enemy_preparing, screenPos.x, screenPos.y - images.enemy_preparing.height + 20);
         }
+        draw3dHurt() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.drawImage(images.enemy_hurt, screenPos.x, screenPos.y - images.enemy_hurt.height + 20);
+        }
     }
 
     class Player extends GameObject {
@@ -440,7 +450,8 @@ define('app/game', [
             }
             this.immunityTimer = null;
         }
-        hurt() {
+        hurt(dmg) {
+            if (dmg === 0) return;
             this.hp--;
             this.isColliding = false;
             this.immunityTimer = new TimedAction(1000, function() {
@@ -505,7 +516,6 @@ define('app/game', [
                 }
                 this.game.attemptMove(this, attemptedHitBox);
             }
-            
         }
         move() {
             this.movement.x = this.movement.x * 0.65;
