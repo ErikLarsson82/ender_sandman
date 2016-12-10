@@ -136,6 +136,7 @@ define('app/game', [
             if (game.countEnemies() === 0) {
                 game.crib.safeTouch();
                 game.safeKiddo = new SafeKiddo();
+                game.playSound('music_ending');
             }
         }
     }
@@ -391,6 +392,7 @@ define('app/game', [
             this.safe = true;
         }
         damage() {
+            game.playSound('cribdmg')
             this.hp--;
             this.game.screenShaker.shake();
         }
@@ -474,6 +476,13 @@ define('app/game', [
             var jumpY = Math.sin(angle) * -20;
             this.action = new TimedAction(700, function() {
                 this.reset();
+                var sounds = [
+                    'jump1',
+                    'jump2',
+                    'jump3',
+                ]
+                var selectedSound = sounds[Math.floor(Math.random() * 3)];
+                game.playSound(selectedSound)
                 this.state = 'jumping';
                 this.movement.x = jumpX;
                 this.movement.y = jumpY;
@@ -702,6 +711,7 @@ define('app/game', [
             this.state = 'idle';
         }
         punch() {
+            game.playSound('swing');
             this.state = 'punch';
             this.swing_spritesheet.stop();
             this.swing_spritesheet.play();
@@ -757,6 +767,8 @@ define('app/game', [
             if (pad.buttons[2].pressed) {
                 game.loadEnemies();
                 game.calm = false;
+                game.playSound('music_intro', true);
+                game.playSound('darkness')
                 game.goodnightText = null;
                 this.hasReleasedButton = false;
             }
@@ -963,7 +975,9 @@ define('app/game', [
     }
 
     return {
-        init: function() {
+        init: function(playSound) {
+            game.playSound = playSound;
+            game.playSound('music_intro');
             game.loadLevel();
             game.goodnightText = new GoodNight();
             game.screenShaker = new ScreenShaker();
