@@ -14,17 +14,17 @@ define('app/game', [
     SpriteSheet,
     TimedAction,
     utils
-) {    
+) {
     var DEBUG_WRITE_BUTTONS = false;
     var DEBUG_NO_2D = true;
     var DEBUG_KEYBOARD = false;
-    
+
     const TILE_SIZE = 14 * 4;
     var gameObjects = [];
     var game = {
         calm: true,
     }
-    
+
     game.distance = function(obj1, obj2) {
         const dx = obj2.x - obj1.x
         const dy = obj2.y - obj1.y
@@ -37,9 +37,21 @@ define('app/game', [
 
     game.endCondition = function() {
         if (game.crib.hp <= 0) return 'gameover';
+        if (game.player.hp <= 0) return 'gameover';
         if (game.calm === false && game.crib.safe === true && game.countEnemies() <= 0) return 'win';
 
         return 'false';
+    }
+
+    game.gameOver = function() {
+        game.fader.fadeOut();
+        //game.playSound('')
+    }
+
+    game.gameWon = function() {
+        game.crib.safeTouch();
+        game.safeKiddo = new SafeKiddo();
+        game.playSound('music_ending');
     }
 
     game.countEnemies = function() {
@@ -54,7 +66,7 @@ define('app/game', [
             [Enemy, Enemy],
             [Punch, Tile],
         ]
-            
+
         return !!_.find(filter, function(pair) {
             return (mover instanceof pair[0] && item instanceof pair[1])
         })
@@ -73,7 +85,7 @@ define('app/game', [
         })
 
         var hitboxY = {
-            x: object.hitbox.x, 
+            x: object.hitbox.x,
             y: hitbox.y, //Only change this value!
             width: hitbox.width,
             height: hitbox.height,
@@ -134,9 +146,7 @@ define('app/game', [
             var player = game.getOfType(collider, collidee, Player);
             var crib = game.getOfType(collider, collidee, Crib);
             if (game.countEnemies() === 0) {
-                game.crib.safeTouch();
-                game.safeKiddo = new SafeKiddo();
-                game.playSound('music_ending');
+                game.gameWon();
             }
         }
     }
@@ -183,7 +193,7 @@ define('app/game', [
         }
         return newPos;
     }
-    
+
 
     function debugWriteButtons(pad) {
         if (!DEBUG_WRITE_BUTTONS) return;
@@ -204,7 +214,8 @@ define('app/game', [
     class Fader {
         constructor() {
             this.counter = 0;
-            this.delta = 0.5;
+            this.deltaIn = 0.5;
+            this.deltaOut = 0.2;
             this.fadingIn = false;
             this.fadingOut = false;
 
@@ -219,11 +230,11 @@ define('app/game', [
         }
         tick() {
             if (this.fadingIn) {
-                this.counter += this.delta;
+                this.counter += this.deltaIn;
                 if (this.counter > 100) this.counter = 100;
             }
             if (this.fadingOut) {
-                this.counter -= this.delta;
+                this.counter -= this.deltaOut;
                 if (this.counter < 0) this.counter = 0;
             }
         }
@@ -434,6 +445,7 @@ define('app/game', [
             game.playSound('cribdmg')
             this.hp--;
             this.game.screenShaker.shake();
+            if (this.hp <= 0) game.gameOver();
         }
         tick() {
             this.crib_spritesheet.tick();
@@ -534,7 +546,7 @@ define('app/game', [
             this.walk_spritesheet.tick();
             this.jump_spritesheet.tick();
             this.attack_spritesheet.tick();
-            
+
             if (Math.abs(this.movement.x) > 0.2 || Math.abs(this.movement.y) > 0.2) {
                 //Enemy is sliding across the floor
                 this.movement.x = this.movement.x * 0.94;
@@ -556,7 +568,7 @@ define('app/game', [
                 this.action.tick();
                 return;
             }
-            
+
             if (this.state === 'idle' && game.distance(this.hitbox, game.player.hitbox) < 200) {
                 this.chasingPlayer = true;
             }
@@ -579,7 +591,7 @@ define('app/game', [
                 if (this.action) return;
                 this.attack_spritesheet.stop();
                 this.attack_spritesheet.play();
-                
+
                 this.action = new TimedAction(2000, function() {
                     this.reset();
                     this.state = 'attackingCrib';
@@ -612,7 +624,7 @@ define('app/game', [
         }
         draw3d(context) {
             if (!this.isColliding) context.globalAlpha = 0.5;
-            
+
             if (this.state === 'hurt') this.shaker.renderShake(context);
 
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
@@ -640,7 +652,7 @@ define('app/game', [
                 break;
                 case 'attackingCrib':
                     if (game.distance(this.hitbox, game.crib.hitbox) < 80) {
-                        this.draw3dAttack(context) 
+                        this.draw3dAttack(context)
                     } else {
                         this.draw3dRunning(context)
                     }
@@ -698,7 +710,7 @@ define('app/game', [
             this.action = null;
             this.previousDirectionX = 1;
             this.previousDirectionY = 0;
-            this.hp = 1;
+            this.hp = 10;
             this.movement = {
                 x: 0,
                 y: 0
@@ -743,6 +755,7 @@ define('app/game', [
                 this.isColliding = true;
             }.bind(this))
             this.game.screenShaker.shake();
+            if (this.hp <= 0) game.gameOver();
         }
         reset() {
             this.action = null;
@@ -822,9 +835,9 @@ define('app/game', [
             } else {
                 var xDelta = pad.axes[0] * delta / 3;
                 var yDelta = pad.axes[1] * delta / 3;
-                
+
                 if (Math.abs(xDelta) > 0.01 || Math.abs(yDelta) > 0.01) this.walkedThisTick = true;
-                
+
                 this.walk_spritesheet.tick((Math.abs(xDelta) + Math.abs(yDelta)) * 10);
                 var attemptedHitBox = {
                     x: this.hitbox.x + xDelta,
@@ -1032,7 +1045,7 @@ define('app/game', [
                     gameObject.tick(delta);
                 });
             }
-            
+
             gameObjects = _.filter(gameObjects, function(gameObject) {
                 return !gameObject.markedForRemoval;
             });
@@ -1071,10 +1084,10 @@ define('app/game', [
                 context.fillStyle = "red"
                 context.fillRect(320 + 24, 24, (game.player.hp / 10) * 292, 22)
             }
-                
+
             context.save()
             context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
-                
+
             _.each(gameObjects, function(gameObject) {
                 gameObject.draw3d(context);
             });
