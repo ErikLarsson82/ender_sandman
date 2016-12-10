@@ -200,6 +200,52 @@ define('app/game', [
         })
     }
 
+    class Shaker {
+        constructor() {
+            var shakeAmount = 2;
+            var shakeAmount2 = 5;
+            this.idx = 0;
+            this.shakeArray = [
+                [shakeAmount,0],
+                [shakeAmount,0],
+                [0,0],
+                [shakeAmount,shakeAmount2],
+                [shakeAmount,0],
+                [0,-shakeAmount2],
+                [shakeAmount,0],
+                [0,0],
+                [shakeAmount,shakeAmount2],
+                [shakeAmount,0],
+                [0,-shakeAmount2],
+                [0,-shakeAmount2],
+                [0,-shakeAmount2],
+                [-shakeAmount,0],
+                [0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+                [0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+                [0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+                [0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+                [0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+                [0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+                [0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+                [0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+              ];
+        }
+        shake() {
+            this.idx = 0;
+        }
+        renderShake(context) {
+            context.save();
+            context.translate(this.shakeArray[this.idx][0], this.shakeArray[this.idx][1]);
+        }
+        restore(context) {
+            context.restore();
+        }
+        tick() {
+            this.idx++;
+            if (this.idx >= this.shakeArray.length) this.idx = 0;
+        }
+    }
+
     class GameObject {
         constructor(config) {
             this.game = config.game;
@@ -301,6 +347,7 @@ define('app/game', [
             this.hp = 5;
             this.playerDamage = 1;
             this.movement = { x: 0, y: 0 };
+            this.shaker = new Shaker();
             this.walk_spritesheet = SpriteSheet.new(images.enemy_walk, {
                 frames: [200, 200],
                 x: 0,
@@ -335,6 +382,7 @@ define('app/game', [
         hurt(direction) {
             this.playerDamage = 0;
             this.state = 'hurt';
+            this.shaker.shake();
             this.action = new TimedAction(20, function() {
                 //hmm this one is not neccessary
                 this.reset();
@@ -365,6 +413,7 @@ define('app/game', [
             }.bind(this))
         }
         tick() {
+            this.shaker.tick();
             this.walk_spritesheet.tick();
             this.jump_spritesheet.tick();
             this.attack_spritesheet.tick();
@@ -447,6 +496,8 @@ define('app/game', [
         draw3d(context) {
             if (!this.isColliding) context.globalAlpha = 0.5;
             
+            if (this.state === 'hurt') this.shaker.renderShake(context);
+
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.save();
             context.translate(screenPos.x, screenPos.y - images.enemy_shadow.height + 20)
@@ -480,6 +531,7 @@ define('app/game', [
                 break;
             }
 
+            if (this.state === 'hurt') this.shaker.restore(context);
             context.globalAlpha = 1;
         }
         draw3dRunning() {
