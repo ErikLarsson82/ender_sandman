@@ -1,5 +1,6 @@
 define('app/game', [
     'app/images',
+    'app/level',
     'underscore',
     'userInput',
     'SpriteSheet',
@@ -7,6 +8,7 @@ define('app/game', [
     'utils'
 ], function (
     images,
+    level,
     _,
     userInput,
     SpriteSheet,
@@ -14,9 +16,10 @@ define('app/game', [
     utils
 ) {    
     var DEBUG_WRITE_BUTTONS = false;
-    var DEBUG_NO_2D = true;
+    var DEBUG_NO_2D = false;
     var DEBUG_KEYBOARD = false;
     
+    const TILE_SIZE = 14;
     let gameObjects = [];
     var game = {}
     window.game = game;
@@ -80,24 +83,17 @@ define('app/game', [
         }
     }
 
+    class Tile extends GameObject {}
+
     class Player extends GameObject {
         constructor(config) {
             super(config);
+            this.color = "#cccccc"
         }
         tick(delta) {
             var pad = userInput.getInput(this.id);
             debugWriteButtons(pad);
             
-        }
-        draw2d() {
-            const colors = {
-                Walking: "green",
-                Punch: "red",
-                Fall: "blue"
-
-            }
-            context.fillStyle = colors[this.state];
-            context.fillRect(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
         }
         draw3d() {
             //var pos = { x: Math.round(this.hitbox.x), y: Math.round(this.hitbox.y) }
@@ -110,20 +106,42 @@ define('app/game', [
     var canvas = document.getElementById('canvas');
     var context = canvas.getContext('2d');
 
+    function loadLevel() {
+        _.each(level.getLevel(), function(row, rowIdx) {
+          _.each(row, function(column, colIdx) {
+            switch(column) {
+              case 1:
+                player = new Player({
+                    hitbox: {
+                        x: colIdx * TILE_SIZE,
+                        y: rowIdx * TILE_SIZE,
+                        width: TILE_SIZE,
+                        height: TILE_SIZE
+                    },
+                    game: game,
+                });
+                gameObjects.push(player);
+              break;
+              case 2:
+                var tile = new Tile({
+                    hitbox: {
+                        x: colIdx * TILE_SIZE,
+                        y: rowIdx * TILE_SIZE,
+                        width: TILE_SIZE,
+                        height: TILE_SIZE
+                    },
+                    game: game,
+                });
+                gameObjects.push(tile);
+              break;
+            }
+          })
+      })
+    }
+
     return {
         init: function() {
-            return;
-            gameObjects.push(new Player({
-                hitbox: {
-                    x: 270,
-                    y: 300,
-                    width: 20,
-                    height: 20
-                },
-                id: 0,
-                game: game
-            }));
-
+            loadLevel();
         },
         tick: function(delta) {
 
@@ -143,7 +161,7 @@ define('app/game', [
 
             if (!DEBUG_NO_2D) {
                 context.save();
-                context.translate(200, 200)
+                //context.transform(1, 0, 0.25, 0.5, 0, 0);
                 _.each(gameObjects, function(gameObject) {
                     gameObject.draw2d();
                 });
