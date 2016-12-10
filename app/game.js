@@ -438,14 +438,13 @@ define('app/game', [
                 x: 0,
                 y: 0
             }
+            this.immunityTimer = null;
         }
         hurt() {
             this.hp--;
-            this.movement.x = 0;
-            this.movement.y = 0;
             this.isColliding = false;
-            this.action = new TimedAction(1000, function() {
-                this.reset();
+            this.immunityTimer = new TimedAction(1000, function() {
+                this.isColliding = true;
             }.bind(this))
         }
         reset() {
@@ -453,8 +452,8 @@ define('app/game', [
             this.isColliding = true;
         }
         punch() {
-            this.movement.x = this.previousDirectionX * 50;
-            this.movement.y = this.previousDirectionY * 50;
+            this.movement.x = this.previousDirectionX * 30;
+            this.movement.y = this.previousDirectionY * 30;
             var punchConfig = {
                 hitbox: {
                     x: this.hitbox.x + (this.previousDirectionX * TILE_SIZE),
@@ -480,11 +479,13 @@ define('app/game', [
             debugWriteButtons(pad);
             this.setDirection(pad.axes[0], pad.axes[1]);
 
+            this.immunityTimer && this.immunityTimer.tick();
+
             if (this.action) {
                 this.action.tick();
                 return;
             }
-            if (Math.abs(this.movement.x) < 0.1 && Math.abs(this.movement.y) < 0.1) {
+            if (Math.abs(this.movement.x) < 0.05 && Math.abs(this.movement.y) < 0.05) {
                 this.movement.x = 0;
                 this.movement.y = 0;
             } else {
@@ -507,8 +508,8 @@ define('app/game', [
             
         }
         move() {
-            this.movement.x = this.movement.x * 0.5;
-            this.movement.y = this.movement.y * 0.5;
+            this.movement.x = this.movement.x * 0.65;
+            this.movement.y = this.movement.y * 0.65;
             var attemptedHitBox = {
                     x: this.hitbox.x + this.movement.x,
                     y: this.hitbox.y + this.movement.y,
