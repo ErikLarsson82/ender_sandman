@@ -79,6 +79,13 @@ define('app/game', [
             tile.test();
             player.test();
         }
+
+        if (game.isOfTypes(collider, collidee, Player, Enemy)) {
+            var enemy = game.getOfType(collider, collidee, Enemy);
+            var player = game.getOfType(collider, collidee, Player);
+            enemy.immune();
+            player.hurt();
+        }
     }
 
     game.detectHits = function(who, hitbox) {
@@ -89,11 +96,21 @@ define('app/game', [
             }
             if (item === who) return;
 
+            var itemIsDynamic = !item.isStatic;
+
             const condition1 = hitbox.x + hitbox.width > item.hitbox.x;
             const condition2 = hitbox.x < item.hitbox.x + item.hitbox.width;
             const condition3 = hitbox.y + hitbox.height > item.hitbox.y;
             const condition4 = hitbox.y < item.hitbox.y + item.hitbox.height;
-            return (condition1 && condition2 && condition3 && condition4);
+
+            // Who is always dynamic
+            // Condiftion 5 is true if who is colliding and that is colliding with a dynamic
+            const subCondition5 = who.isColliding && itemIsDynamic;
+            const subCondition6 = item.isStatic;
+
+            const condition5 = (subCondition5 || subCondition6)
+            //console.log(who.name, item.name, condition5);
+            return (condition1 && condition2 && condition3 && condition4 && condition5);
         });
     }
 
@@ -126,6 +143,9 @@ define('app/game', [
             this.hitbox = config.hitbox;
             this.color = config.color || "#444444";
             this.markedForRemoval = false;
+            this.isColliding = true;
+            this.isStatic = false;
+            this.name = "Gameobject";
         }
         tick() {
 
@@ -140,14 +160,32 @@ define('app/game', [
     }
 
     class Tile extends GameObject {
+        constructor(config) {
+            super(config);
+            this.isStatic = true;
+            this.name = "Tile";
+        }
         test() {
-            console.log('tile collide');
+            //console.log('tile collide');
         }
     }
 
     class Enemy extends GameObject {
-        test() {
-            console.log('tile collide');
+        constructor(config) {
+            super(config);
+            this.name = "Enemy"
+        }
+        immune() {
+            this.isColliding = false;
+        }
+        tick() {
+            var attemptedHitBox = {
+                x: this.hitbox.x + 1,
+                y: this.hitbox.y + 1,
+                width: this.hitbox.width,
+                height: this.hitbox.height,
+            }
+            this.game.attemptMove(this, attemptedHitBox);
         }
     }
 
@@ -155,12 +193,16 @@ define('app/game', [
         constructor(config) {
             super(config);
             this.color = "#cccccc"
+            this.name = "Player"
         }
         test() {
             this.color = "#ff0000"
-            console.log('player collide')
+        }
+        hurt() {
+            console.log('i got hurt!!');
         }
         tick(delta) {
+            return;
             this.color = "#cccccc"
             var pad = userInput.getInput(0);
             debugWriteButtons(pad);
@@ -168,8 +210,6 @@ define('app/game', [
             var attemptedHitBox = {
                 x: this.hitbox.x + pad.axes[0] * delta / 10,
                 y: this.hitbox.y + pad.axes[1] * delta / 10,
-                //x: this.hitbox.x + pad.axes[0] * delta / 10,
-                //y: this.hitbox.y + pad.axes[1] * delta / 10,
                 width: this.hitbox.width,
                 height: this.hitbox.height,
             }
@@ -213,6 +253,18 @@ define('app/game', [
                     game: game,
                 });
                 gameObjects.push(tile);
+              break;
+              case 3:
+                var enemy = new Enemy({
+                    hitbox: {
+                        x: colIdx * TILE_SIZE,
+                        y: rowIdx * TILE_SIZE,
+                        width: TILE_SIZE,
+                        height: TILE_SIZE
+                    },
+                    game: game,
+                });
+                gameObjects.push(enemy);
               break;
             }
           })
