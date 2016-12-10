@@ -5,6 +5,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var dad = new Image();
   dad.src = "./assets/images/dad.png";
 
+  var enemy = new Image();
+  enemy.src = "./assets/images/enemy.png";
+
   var dad_idle = SpriteSheet.new(dad, {
     frames: [90, 90],
     x: 0,
@@ -16,6 +19,8 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
 
   return {
     background: background,
+    dad: dad,
     dad_idle: dad_idle,
+    enemy: enemy
   }
 })

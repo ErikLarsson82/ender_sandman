@@ -19,7 +19,7 @@ define('app/game', [
     var DEBUG_NO_2D = false;
     var DEBUG_KEYBOARD = false;
     
-    const TILE_SIZE = 14;
+    const TILE_SIZE = 14 * 4;
     let gameObjects = [];
     var game = {}
     window.game = game;
@@ -120,6 +120,14 @@ define('app/game', [
             return item instanceof klass;
         });
     }
+
+    game.convertToScreenCoordinates = function(pos) {
+        var newPos = {
+            x: pos.x + (pos.y * 0.25),
+            y: pos.y / 2,
+        }
+        return newPos;
+    }
     
 
     function debugWriteButtons(pad) {
@@ -185,14 +193,18 @@ define('app/game', [
         }
         tick() {
             this.recover && this.recover.tick();
-            
+            return;
             var attemptedHitBox = {
-                x: this.hitbox.x + 1,
-                y: this.hitbox.y + 1,
+                x: this.hitbox.x + 2,
+                y: this.hitbox.y + 2,
                 width: this.hitbox.width,
                 height: this.hitbox.height,
             }
             this.game.attemptMove(this, attemptedHitBox);
+        }
+        draw3d(context) {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.drawImage(images.enemy, screenPos.x, screenPos.y - images.enemy.height + 20);
         }
     }
 
@@ -218,16 +230,19 @@ define('app/game', [
             debugWriteButtons(pad);
             
             var attemptedHitBox = {
-                x: this.hitbox.x + pad.axes[0] * delta / 10,
-                y: this.hitbox.y + pad.axes[1] * delta / 10,
+                x: this.hitbox.x + pad.axes[0] * delta / 3,
+                y: this.hitbox.y + pad.axes[1] * delta / 3,
                 width: this.hitbox.width,
                 height: this.hitbox.height,
             }
             this.game.attemptMove(this, attemptedHitBox);
         }
-        draw3d() {
+        draw3d(context) {
             //var pos = { x: Math.round(this.hitbox.x), y: Math.round(this.hitbox.y) }
             //this.sprite.draw(context, pos);
+
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.drawImage(images.dad, screenPos.x + 4, screenPos.y - images.dad.height + 20);
         }
     }
 
@@ -303,15 +318,21 @@ define('app/game', [
 
             if (!DEBUG_NO_2D) {
                 context.save();
-                //context.transform(1, 0, 0.25, 0.5, 0, 0);
+                context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
+                context.transform(1, 0, 0.25, 0.5, 0, 0);
+                //context.scale(4,4)
                 _.each(gameObjects, function(gameObject) {
                     gameObject.draw2d(context);
                 });
                 context.restore();
             }
 
+
+            context.save()
+            context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
+                
             _.each(gameObjects, function(gameObject) {
-                gameObject.draw3d();
+                gameObject.draw3d(context);
             });
 
             context.restore();
