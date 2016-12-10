@@ -30,6 +30,10 @@ define('app/game', [
         return Math.sqrt(dx * dx + dy * dy)
     }
 
+    game.getAngle = function(pos) {
+      return Math.atan2(pos.y, pos.x)
+    };
+
     game.isInIgnoreFilter = function(mover, item) {
         var filter = [
             [Player, Punch],
@@ -244,8 +248,8 @@ define('app/game', [
             }.bind(this))
         }
         hurt(direction) {
-            this.movement.x = direction.x * 27;
-            this.movement.y = direction.y * 27;
+            this.movement.x = direction.x * 14;
+            this.movement.y = direction.y * 14;
             this.chasingPlayer = true;
             this.state = 'idle';
         }
@@ -256,11 +260,14 @@ define('app/game', [
         }
         prepareForJump() {
             this.state = 'preparing';
+            var angle = game.getAngle({x: this.hitbox.x - player.hitbox.x, y: this.hitbox.y - player.hitbox.y})
+            var jumpX = Math.cos(angle) * -20;
+            var jumpY = Math.sin(angle) * -20;
             this.recover = new TimedAction(2000, function() {
                 this.reset();
                 this.state = 'jumping';
-                this.movement.x = 20;
-                this.movement.y = 0;
+                this.movement.x = jumpX;
+                this.movement.y = jumpY;
                 this.jump_spritesheet.stop();
                 this.jump_spritesheet.play();
             }.bind(this))
@@ -300,8 +307,9 @@ define('app/game', [
             }
         }
         resolveChase() {
-            var movementX = (player.hitbox.x > this.hitbox.x) ? 1 : -1;
-            var movementY = (player.hitbox.y > this.hitbox.y) ? 1 : -1;
+            var angle = game.getAngle({x: this.hitbox.x - player.hitbox.x, y: this.hitbox.y - player.hitbox.y})
+            var movementX = Math.cos(angle) * -2;
+            var movementY = Math.sin(angle) * -2;
             var attemptedHitBox = {
                 x: this.hitbox.x + movementX,
                 y: this.hitbox.y + movementY,
