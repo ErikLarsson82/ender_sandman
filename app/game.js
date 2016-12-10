@@ -36,7 +36,9 @@ define('app/game', [
     game.isInIgnoreFilter = function(mover, item) {
         var filter = [
             [Player, Punch],
+            [Punch, Player],
             [Enemy, Enemy],
+            [Punch, Tile],
         ]
             
         return !!_.find(filter, function(pair) {
@@ -507,15 +509,21 @@ define('app/game', [
             super(config);
             this.color = "#00FF00"
             this.name = "Punch"
-            this.counter = new TimedAction(500, function() {
+            this.counter = new TimedAction(300, function() {
                 this.destroy();
             }.bind(this));
+            this.movement = {
+                x: this.direction.x * 10,
+                y: this.direction.y * 10,
+            }
         }
         tick() {
             this.counter.tick();
+            this.movement.x = this.movement.x * 0.7;
+            this.movement.y = this.movement.y * 0.7;
             var attemptedHitBox = {
-                    x: this.hitbox.x,
-                    y: this.hitbox.y,
+                    x: this.hitbox.x + this.movement.x,
+                    y: this.hitbox.y + this.movement.y,
                     width: this.hitbox.width,
                     height: this.hitbox.height,
                 }
