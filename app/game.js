@@ -201,6 +201,45 @@ define('app/game', [
         })
     }
 
+    class Fader {
+        constructor() {
+            this.counter = 0;
+            this.delta = 0.5;
+            this.fadingIn = false;
+            this.fadingOut = false;
+
+            window.addEventListener("keydown", function(e) {
+                if (e.keyCode === 192) { //ö
+                    this.fadeIn();
+                }
+                if (e.keyCode === 222) { //ä
+                    this.fadeOut();
+                }
+            }.bind(this))
+        }
+        tick() {
+            if (this.fadingIn) {
+                this.counter += this.delta;
+                if (this.counter > 100) this.counter = 100;
+            }
+            if (this.fadingOut) {
+                this.counter -= this.delta;
+                if (this.counter < 0) this.counter = 0;
+            }
+        }
+        getFade() {
+            return 1 - (this.counter / 100);
+        }
+        fadeIn() {
+            this.fadingIn = true;
+            this.fadingOut = false;
+        }
+        fadeOut() {
+            this.fadingIn = false;
+            this.fadingOut = true;
+        }
+    }
+
     class Shaker {
         constructor() {
             var shakeAmount = 2;
@@ -659,7 +698,7 @@ define('app/game', [
             this.action = null;
             this.previousDirectionX = 1;
             this.previousDirectionY = 0;
-            this.hp = 10;
+            this.hp = 1;
             this.movement = {
                 x: 0,
                 y: 0
@@ -981,8 +1020,12 @@ define('app/game', [
             game.loadLevel();
             game.goodnightText = new GoodNight();
             game.screenShaker = new ScreenShaker();
+            game.fader = new Fader();
+            game.fader.fadeIn();
         },
         tick: function(delta) {
+
+            game.fader.tick();
 
             if (game.endCondition() === 'false') {
                 _.each(gameObjects, function(gameObject) {
@@ -1043,6 +1086,13 @@ define('app/game', [
 
             game.screenShaker.restore(context);
 
+            var fade = game.fader.getFade();
+            if (fade !== 0) {
+                context.globalAlpha = fade;
+                context.fillStyle = "black";
+                context.fillRect(0,0,canvas.width, canvas.height)
+                context.globalAlpha = 1;
+            }
             if (game.endCondition() === 'gameover') {
                 context.drawImage(images.gameover, 102, 228);
             }
