@@ -24,6 +24,17 @@ define('app/game', [
     var game = {}
     window.game = game;
 
+    game.isInIgnoreFilter = function(mover, item) {
+        var filter = [
+            [Player, Punch],
+            [Enemy, Enemy],
+        ]
+            
+        return !!_.find(filter, function(pair) {
+            return (mover instanceof pair[0] && item instanceof pair[1])
+        })
+    }
+
     game.attemptMove = function(object, hitbox) {
         var hitboxX = {
             x: hitbox.x, //Only change this value!
@@ -83,8 +94,15 @@ define('app/game', [
         if (game.isOfTypes(collider, collidee, Player, Enemy)) {
             var enemy = game.getOfType(collider, collidee, Enemy);
             var player = game.getOfType(collider, collidee, Player);
-            enemy.immune();
+            //enemy.immune();
             player.hurt();
+        }
+
+        if (game.isOfTypes(collider, collidee, Enemy, Punch)) {
+            var enemy = game.getOfType(collider, collidee, Enemy);
+            var punch = game.getOfType(collider, collidee, Punch);
+            enemy.hurt(punch.direction);
+            punch.isColliding = false;
         }
     }
 
@@ -110,8 +128,10 @@ define('app/game', [
             const subCondition6 = item.isColliding && itemIsDynamic;
             const subCondition7 = item.isStatic;
 
+            const condition6 = !game.isInIgnoreFilter(mover, item);
+
             const condition5 = ((subCondition5 && subCondition6) || subCondition7)
-            return (condition1 && condition2 && condition3 && condition4 && condition5);
+            return (condition1 && condition2 && condition3 && condition4 && condition5 && condition6);
         });
     }
 
@@ -150,6 +170,7 @@ define('app/game', [
         constructor(config) {
             this.game = config.game;
             this.hitbox = config.hitbox;
+            this.direction = config.direction || { x: 0, y: 0 }
             this.color = config.color || "#444444";
             this.markedForRemoval = false;
             this.isColliding = true;
@@ -158,6 +179,9 @@ define('app/game', [
         }
         tick() {
 
+        }
+        destroy() {
+            this.markedForRemoval = true;
         }
         draw2d(context) {
             if (!this.isColliding) context.globalAlpha = 0.5;
@@ -183,6 +207,7 @@ define('app/game', [
             super(config);
             this.name = "Enemy"
             this.recover = null;
+            this.movement = { x: 0, y: 0 };
         }
         immune() {
             this.isColliding = false;
@@ -191,20 +216,43 @@ define('app/game', [
                 this.isColliding = true;
             }.bind(this))
         }
+        hurt(direction) {
+            this.movement.x = direction.x * 20;
+            this.movement.y = direction.y * 20;
+            //this.destroy();
+        }
         tick() {
             this.recover && this.recover.tick();
-            return;
+            
+            if (Math.abs(this.movement.x) > 0.1 || Math.abs(this.movement.y) > 0.1) {
+                //Enemy is sliding across the floor
+                this.movement.x = this.movement.x * 0.9;
+                this.movement.y = this.movement.y * 0.9;
+                var attemptedHitBox = {
+                    x: this.hitbox.x + this.movement.x,
+                    y: this.hitbox.y + this.movement.y,
+                    width: this.hitbox.width,
+                    height: this.hitbox.height,
+                }
+                this.game.attemptMove(this, attemptedHitBox);
+                return;
+            } else {
+                this.movement.x = 0;
+                this.movement.y = 0;
+            }
             var attemptedHitBox = {
-                x: this.hitbox.x + 2,
-                y: this.hitbox.y + 2,
+                x: this.hitbox.x,
+                y: this.hitbox.y,
                 width: this.hitbox.width,
                 height: this.hitbox.height,
             }
             this.game.attemptMove(this, attemptedHitBox);
         }
         draw3d(context) {
+            if (!this.isColliding) context.globalAlpha = 0.5;
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.drawImage(images.enemy, screenPos.x, screenPos.y - images.enemy.height + 20);
+            context.globalAlpha = 1;
         }
     }
 
@@ -214,35 +262,101 @@ define('app/game', [
             this.color = "#cccccc"
             this.name = "Player"
             this.recover = null;
+            this.isBusy = false;
+            this.previousDirectionX = 1;
+            this.previousDirectionY = 0;
         }
         hurt() {
             this.isColliding = false;
             this.recover = new TimedAction(1000, function() {
-                this.recover = null;
-                this.isColliding = true;
+                this.reset();
             }.bind(this))
         }
+        reset() {
+            this.recover = null;
+            this.isColliding = true;
+            this.isBusy = false;
+        }
+        punch() {
+            this.isBusy = true;
+            var punchConfig = {
+                hitbox: {
+                    x: this.hitbox.x + (this.previousDirectionX * TILE_SIZE),
+                    y: this.hitbox.y + (this.previousDirectionY * TILE_SIZE),
+                    width: this.hitbox.width,
+                    height: this.hitbox.height,
+                },
+                direction: {
+                    x: this.previousDirectionX,
+                    y: this.previousDirectionY
+                },
+                game: game
+            }
+            gameObjects.push(new Punch(punchConfig));
+            this.recover = new TimedAction(800, function() {
+                this.reset();
+            }.bind(this))
+        }
+        setDirection(x, y) {
+            if (x === 0 && y === 0) return;
+            this.previousDirectionX = x;
+            this.previousDirectionY = y;
+        }
         tick(delta) {
+            var pad = userInput.getInput(0);
+            debugWriteButtons(pad);
+            this.setDirection(pad.axes[0], pad.axes[1]);
+            
             this.recover && this.recover.tick();
 
             this.color = "#cccccc"
-            var pad = userInput.getInput(0);
-            debugWriteButtons(pad);
-            
-            var attemptedHitBox = {
-                x: this.hitbox.x + pad.axes[0] * delta / 3,
-                y: this.hitbox.y + pad.axes[1] * delta / 3,
-                width: this.hitbox.width,
-                height: this.hitbox.height,
+
+            if (pad.buttons[2].pressed) {
+                if (this.isBusy) return;
+                this.punch();
+            } else {
+                var attemptedHitBox = {
+                    x: this.hitbox.x + pad.axes[0] * delta / 3,
+                    y: this.hitbox.y + pad.axes[1] * delta / 3,
+                    width: this.hitbox.width,
+                    height: this.hitbox.height,
+                }
+                this.game.attemptMove(this, attemptedHitBox);
             }
-            this.game.attemptMove(this, attemptedHitBox);
+            
         }
         draw3d(context) {
             //var pos = { x: Math.round(this.hitbox.x), y: Math.round(this.hitbox.y) }
             //this.sprite.draw(context, pos);
-
+            if (!this.isColliding) context.globalAlpha = 0.5;
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.drawImage(images.dad, screenPos.x + 4, screenPos.y - images.dad.height + 20);
+            context.globalAlpha = 1;
+        }
+    }
+
+    class Punch extends GameObject {
+        constructor(config) {
+            super(config);
+            this.color = "#00FF00"
+            this.name = "Punch"
+            this.counter = new TimedAction(500, function() {
+                this.destroy();
+            }.bind(this));
+        }
+        tick() {
+            this.counter.tick();
+            var attemptedHitBox = {
+                    x: this.hitbox.x,
+                    y: this.hitbox.y,
+                    width: this.hitbox.width,
+                    height: this.hitbox.height,
+                }
+            this.game.attemptMove(this, attemptedHitBox);
+        }
+        draw3d(context) {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.drawImage(images.punch, screenPos.x, screenPos.y - images.punch.height + 20);
         }
     }
 

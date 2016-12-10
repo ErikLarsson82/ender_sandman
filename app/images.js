@@ -5,6 +5,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var dad = new Image();
   dad.src = "./assets/images/dad.png";
 
+  var punch = new Image();
+  punch.src = "./assets/images/punch.png";
+
   var enemy = new Image();
   enemy.src = "./assets/images/enemy.png";
 
@@ -20,6 +23,7 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   return {
     background: background,
     dad: dad,
+    punch: punch,
     dad_idle: dad_idle,
     enemy: enemy
   }
