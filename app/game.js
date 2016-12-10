@@ -24,7 +24,64 @@ define('app/game', [
     var game = {}
     window.game = game;
 
-    game.detectHits = function(who, type) {
+    game.attemptMove = function(object, hitbox) {
+        var hitboxX = {
+            x: hitbox.x, //Only change this value!
+            y: object.hitbox.y,
+            width: hitbox.width,
+            height: hitbox.height,
+        }
+        var resultX = game.detectHits(object, hitboxX);
+        _.each(resultX, function(collidee) {
+            game.resolveCollision(object, hitbox, collidee);
+        })
+
+        var hitboxY = {
+            x: object.hitbox.x, 
+            y: hitbox.y, //Only change this value!
+            width: hitbox.width,
+            height: hitbox.height,
+        }
+        var resultY = game.detectHits(object, hitboxY);
+        _.each(resultY, function(collidee) {
+            game.resolveCollision(object, hitbox, collidee);
+        })
+
+        if (resultX.length === 0) {
+            object.hitbox.x = hitbox.x;
+        }
+        if (resultY.length === 0) {
+            object.hitbox.y = hitbox.y;
+        }
+    }
+
+    game.isOfTypes = function(gameObject, other, type1, type2) {
+        return (gameObject instanceof type1 && other instanceof type2) ||
+            (gameObject instanceof type2 && other instanceof type1)
+    }
+
+    game.getOfType = function(gameObject, other, type) {
+        if (gameObject instanceof type && other instanceof type) {
+          console.warn(`Both ${gameObject} and ${other} were of type ${type}`)
+        }
+        if (gameObject instanceof type) {
+          return gameObject
+        } else if (other instanceof type) {
+          return other
+        }
+        console.error(`None of type ${type}, ${gameObject} - ${other}`)
+    }
+
+    game.resolveCollision = function(collider, newHitbox, collidee) {
+        if (game.isOfTypes(collider, collidee, Player, Tile)) {
+            var tile = game.getOfType(collider, collidee, Tile);
+            var player = game.getOfType(collider, collidee, Player);
+            tile.test();
+            player.test();
+        }
+    }
+
+    game.detectHits = function(who, hitbox) {
         return _.filter(gameObjects, function(item) {
             if (!item.hitbox) {
                 console.error("Dimensions not found on item");
@@ -32,12 +89,11 @@ define('app/game', [
             }
             if (item === who) return;
 
-            const condition1 = who.hitbox.x + who.hitbox.width > item.hitbox.x;
-            const condition2 = who.hitbox.x < item.hitbox.x + item.hitbox.width;
-            const condition3 = who.hitbox.y + who.hitbox.height > item.hitbox.y;
-            const condition4 = who.hitbox.y < item.hitbox.y + item.hitbox.height;
-            const condition5 = item instanceof type;
-            return (condition1 && condition2 && condition3 && condition4 && condition5);
+            const condition1 = hitbox.x + hitbox.width > item.hitbox.x;
+            const condition2 = hitbox.x < item.hitbox.x + item.hitbox.width;
+            const condition3 = hitbox.y + hitbox.height > item.hitbox.y;
+            const condition4 = hitbox.y < item.hitbox.y + item.hitbox.height;
+            return (condition1 && condition2 && condition3 && condition4);
         });
     }
 
@@ -83,17 +139,41 @@ define('app/game', [
         }
     }
 
-    class Tile extends GameObject {}
+    class Tile extends GameObject {
+        test() {
+            console.log('tile collide');
+        }
+    }
+
+    class Enemy extends GameObject {
+        test() {
+            console.log('tile collide');
+        }
+    }
 
     class Player extends GameObject {
         constructor(config) {
             super(config);
             this.color = "#cccccc"
         }
+        test() {
+            this.color = "#ff0000"
+            console.log('player collide')
+        }
         tick(delta) {
-            var pad = userInput.getInput(this.id);
+            this.color = "#cccccc"
+            var pad = userInput.getInput(0);
             debugWriteButtons(pad);
             
+            var attemptedHitBox = {
+                x: this.hitbox.x + pad.axes[0] * delta / 10,
+                y: this.hitbox.y + pad.axes[1] * delta / 10,
+                //x: this.hitbox.x + pad.axes[0] * delta / 10,
+                //y: this.hitbox.y + pad.axes[1] * delta / 10,
+                width: this.hitbox.width,
+                height: this.hitbox.height,
+            }
+            this.game.attemptMove(this, attemptedHitBox);
         }
         draw3d() {
             //var pos = { x: Math.round(this.hitbox.x), y: Math.round(this.hitbox.y) }
