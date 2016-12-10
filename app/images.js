@@ -5,6 +5,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var dad = new Image();
   dad.src = "./assets/images/dad.png";
 
+  var crib = new Image();
+  crib.src = "./assets/images/crib.png";
+
   var punch = new Image();
   punch.src = "./assets/images/punch.png";
 
@@ -13,6 +16,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
 
   var enemy_jump = new Image();
   enemy_jump.src = "./assets/images/enemy_jump.png";
+
+  var enemy_attack = new Image();
+  enemy_attack.src = "./assets/images/enemy_attack.png";
 
   var enemy_preparing = new Image();
   enemy_preparing.src = "./assets/images/enemy_preparing.png";
@@ -29,9 +35,11 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   return {
     background: background,
     dad: dad,
+    crib: crib,
     punch: punch,
     dad_idle: dad_idle,
     enemy_walk: enemy_walk,
+    enemy_attack: enemy_attack,
     enemy_jump: enemy_jump,
     enemy_preparing: enemy_preparing
   }

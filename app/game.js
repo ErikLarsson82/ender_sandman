@@ -20,8 +20,9 @@ define('app/game', [
     var DEBUG_KEYBOARD = false;
     
     const TILE_SIZE = 14 * 4;
-    let gameObjects = [];
+    var gameObjects = [];
     var game = {}
+    var player, crib;
     window.game = game;
 
     game.distance = function(obj1, obj2) {
@@ -212,6 +213,18 @@ define('app/game', [
         }
     }
 
+    class Crib extends GameObject {
+        constructor(config) {
+            super(config);
+            this.isStatic = true;
+            this.name = "Crib";
+        }
+        draw() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.drawImage(images.crib, screenPos.x, screenPos.y - images.crib.height + 20);
+        }
+    }
+
     class Enemy extends GameObject {
         constructor(config) {
             super(config);
@@ -237,21 +250,29 @@ define('app/game', [
                 autoPlay: false,
                 callback: this.reset.bind(this)
             });
-            this.state = 'idle';
+            this.attack_spritesheet = SpriteSheet.new(images.enemy_attack, {
+                frames: [1700, 300],
+                x: 0,
+                y: 0,
+                width: 136 / 2,
+                height: 72,
+                restart: false,
+                autoPlay: false
+            });
+            this.state = (config.attackingCrib) ? 'attackingCrib' : 'idle';
             this.chasingPlayer = false;
         }
         immune() {
             this.isColliding = false;
             this.recover = new TimedAction(2000, function() {
-                this.recover = null;
-                this.isColliding = true;
+                this.reset();
             }.bind(this))
         }
         hurt(direction) {
             this.movement.x = direction.x * 14;
             this.movement.y = direction.y * 14;
             this.chasingPlayer = true;
-            this.state = 'idle';
+            this.reset();
         }
         reset() {
             this.recover = null;
@@ -275,6 +296,7 @@ define('app/game', [
         tick() {
             this.walk_spritesheet.tick();
             this.jump_spritesheet.tick();
+            this.attack_spritesheet.tick();
             this.recover && this.recover.tick();
             
             if (Math.abs(this.movement.x) > 0.1 || Math.abs(this.movement.y) > 0.1) {
@@ -294,19 +316,48 @@ define('app/game', [
                 this.movement.y = 0;
             }
 
+            if (this.state === 'idle' && game.distance(this.hitbox, player.hitbox) < 200) {
+                this.chasingPlayer = true;
+            }
             if (this.state === 'preparing') {
                 return;
+            } else if (this.state === 'attackingCrib') {
+                this.resolveAttackCrib();
             } else {
                 if (this.chasingPlayer) {
                     if (game.distance(this.hitbox, player.hitbox) < 220) {
                         this.prepareForJump();
                     } else {
-                        this.resolveChase();
+                        this.resolveChasePlayer();
                     }
                 }
             }
         }
-        resolveChase() {
+        resolveAttackCrib() {
+            if (game.distance(this.hitbox, crib.hitbox) < 80) {
+                if (this.recover) return;
+                this.attack_spritesheet.stop();
+                this.attack_spritesheet.play();
+                
+                this.recover = new TimedAction(2000, function() {
+                    this.reset();
+                    console.log('attack');
+                    this.state = 'attackingCrib';
+                }.bind(this))
+            } else {
+                var angle = game.getAngle({x: this.hitbox.x - crib.hitbox.x, y: this.hitbox.y - crib.hitbox.y})
+                var movementX = Math.cos(angle) * -2;
+                var movementY = Math.sin(angle) * -2;
+                var attemptedHitBox = {
+                    x: this.hitbox.x + movementX,
+                    y: this.hitbox.y + movementY,
+                    width: this.hitbox.width,
+                    height: this.hitbox.height,
+                }
+                this.game.attemptMove(this, attemptedHitBox);
+            }
+        }
+        resolveChasePlayer() {
             var angle = game.getAngle({x: this.hitbox.x - player.hitbox.x, y: this.hitbox.y - player.hitbox.y})
             var movementX = Math.cos(angle) * -2;
             var movementY = Math.sin(angle) * -2;
@@ -333,6 +384,9 @@ define('app/game', [
                         this.draw3dRunning(context)
                     }
                 break;
+                case 'attackingCrib':
+                    this.draw3dAttack(context)
+                break;
             }
 
             context.globalAlpha = 1;
@@ -349,6 +403,13 @@ define('app/game', [
             context.save();
             context.translate(screenPos.x, screenPos.y - images.enemy_jump.height + 20)
             this.jump_spritesheet.draw(context);
+            context.restore();
+        }
+        draw3dAttack() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.enemy_attack.height + 20)
+            this.attack_spritesheet.draw(context);
             context.restore();
         }
         draw3dPreparing() {
@@ -427,8 +488,6 @@ define('app/game', [
             
         }
         draw3d(context) {
-            //var pos = { x: Math.round(this.hitbox.x), y: Math.round(this.hitbox.y) }
-            //this.sprite.draw(context, pos);
             if (!this.isColliding) context.globalAlpha = 0.5;
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.drawImage(images.dad, screenPos.x + 4, screenPos.y - images.dad.height + 20);
@@ -502,9 +561,35 @@ define('app/game', [
                         width: TILE_SIZE,
                         height: TILE_SIZE
                     },
+                    attackingCrib: false,
                     game: game,
                 });
                 gameObjects.push(enemy);
+              break;
+              case 4:
+                var enemy = new Enemy({
+                    hitbox: {
+                        x: colIdx * TILE_SIZE,
+                        y: rowIdx * TILE_SIZE,
+                        width: TILE_SIZE,
+                        height: TILE_SIZE
+                    },
+                    attackingCrib: true,
+                    game: game,
+                });
+                gameObjects.push(enemy);
+              break;
+              case 9:
+                crib = new Crib({
+                    hitbox: {
+                        x: colIdx * TILE_SIZE,
+                        y: rowIdx * TILE_SIZE,
+                        width: TILE_SIZE,
+                        height: TILE_SIZE
+                    },
+                    game: game,
+                });
+                gameObjects.push(crib);
               break;
             }
           })
