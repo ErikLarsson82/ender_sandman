@@ -33,6 +33,10 @@ define('app/game', [
       return Math.atan2(pos.y, pos.x)
     };
 
+    game.endCondition = function() {
+        return (game.crib.hp <= 0);
+    }
+
     game.isInIgnoreFilter = function(mover, item) {
         var filter = [
             [Player, Punch],
@@ -752,9 +756,11 @@ define('app/game', [
         },
         tick: function(delta) {
 
-            _.each(gameObjects, function(gameObject) {
-                gameObject.tick(delta);
-            });
+            if (!game.endCondition()) {
+                _.each(gameObjects, function(gameObject) {
+                    gameObject.tick(delta);
+                });
+            }
             
             gameObjects = _.filter(gameObjects, function(gameObject) {
                 return !gameObject.markedForRemoval;
@@ -799,6 +805,10 @@ define('app/game', [
             });
 
             context.restore();
+
+            if (game.endCondition()) {
+                context.drawImage(images.gameover, 102, 228);
+            }
         }
     }
 });

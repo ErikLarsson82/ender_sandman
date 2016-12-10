@@ -2,6 +2,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var background = new Image();
   background.src = "./assets/images/background.png";
 
+  var gameover = new Image();
+  gameover.src = "./assets/images/gameover.png";
+
   var player_shadow = new Image();
   player_shadow.src = "./assets/images/player_shadow.png";
 
@@ -46,6 +49,7 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
 
   return {
     background: background,
+    gameover: gameover,
     player_shadow: player_shadow,
     player_idle: player_idle,
     player_swing: player_swing,
