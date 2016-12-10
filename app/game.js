@@ -246,6 +246,74 @@ define('app/game', [
         }
     }
 
+    class ScreenShaker {
+        constructor() {
+            this.idx = 0;
+            var shakeAmount = 7;
+            var shakeAmount2 = 4;
+            this.shakeArray = [
+                [0,0],
+                [shakeAmount,0],
+                [shakeAmount,shakeAmount2],
+                [shakeAmount,shakeAmount2],
+                [shakeAmount,shakeAmount2],
+                [shakeAmount,shakeAmount2],
+                [shakeAmount,0],
+                [0,-shakeAmount2],
+                [0,-shakeAmount2],
+                [0,-shakeAmount2],
+                [0,-shakeAmount2],
+                [0,-shakeAmount2],
+                [0,-shakeAmount2],
+                [-shakeAmount,0],
+                [-shakeAmount,0],
+                [-shakeAmount,0],
+                [-shakeAmount,0],
+                [-shakeAmount,0],
+                [-shakeAmount,0],
+                [-shakeAmount,0],
+                [-shakeAmount,0],
+                [0,0],
+                [0,0],
+                [0,0],
+                [0,0],
+                [0,shakeAmount2],
+                [0,shakeAmount2],
+                [0,shakeAmount2],
+                [shakeAmount,shakeAmount2],
+                [shakeAmount,shakeAmount2],
+                [shakeAmount,shakeAmount2],
+                [shakeAmount,0],
+                [shakeAmount,0],
+                [shakeAmount,0],
+                [shakeAmount,0],
+                [0,0],
+            ];
+            window.addEventListener("keydown", function(e) {
+                if (e.keyCode === 74) { //j
+                    this.shake();
+                }
+            }.bind(this))
+        }
+        shake() {
+            if (this.idx === 0) {
+                this.idx = this.shakeArray.length-1;
+            }
+        }
+        render() {
+            if (this.idx > 0) {
+                this.idx = this.idx - 1;
+                context.save();
+                context.translate(this.shakeArray[this.idx][0], this.shakeArray[this.idx][1]);
+            }
+        }
+        restore() {
+            if (this.idx > 0) {
+                context.restore();
+            }
+        }
+    }
+
     class GameObject {
         constructor(config) {
             this.game = config.game;
@@ -324,6 +392,7 @@ define('app/game', [
         }
         damage() {
             this.hp--;
+            this.game.screenShaker.shake();
         }
         tick() {
             this.crib_spritesheet.tick();
@@ -625,6 +694,7 @@ define('app/game', [
             this.immunityTimer = new TimedAction(1000, function() {
                 this.isColliding = true;
             }.bind(this))
+            this.game.screenShaker.shake();
         }
         reset() {
             this.action = null;
@@ -896,6 +966,7 @@ define('app/game', [
         init: function() {
             game.loadLevel();
             game.goodnightText = new GoodNight();
+            game.screenShaker = new ScreenShaker();
         },
         tick: function(delta) {
 
@@ -912,6 +983,8 @@ define('app/game', [
             gameObjects = _.sortBy(gameObjects, (obj) => {
                 return obj.hitbox.y;
             })
+
+            game.screenShaker.render(context);
 
             context.drawImage(images.background, 0, 0);
 
@@ -953,6 +1026,8 @@ define('app/game', [
 
             game.goodnightText && game.goodnightText.draw(context);
             game.safeKiddo && game.safeKiddo.draw(context);
+
+            game.screenShaker.restore(context);
 
             if (game.endCondition() === 'gameover') {
                 context.drawImage(images.gameover, 102, 228);
