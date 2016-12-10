@@ -36,9 +36,17 @@ define('app/game', [
     };
 
     game.endCondition = function() {
-        return (game.crib.hp <= 0);
+        if (game.crib.hp <= 0) return 'gameover';
+        if (game.calm === false && game.crib.safe === true && game.countEnemies() <= 0) return 'win';
+
+        return 'false';
     }
 
+    game.countEnemies = function() {
+        return _.filter(gameObjects, function(item) {
+            return (item instanceof Enemy);
+        }).length;
+    }
     game.isInIgnoreFilter = function(mover, item) {
         var filter = [
             [Player, Punch],
@@ -120,6 +128,15 @@ define('app/game', [
             var punch = game.getOfType(collider, collidee, Punch);
             enemy.hurt(punch.direction);
             punch.isColliding = false;
+        }
+
+        if (game.isOfTypes(collider, collidee, Player, Crib)) {
+            var player = game.getOfType(collider, collidee, Player);
+            var crib = game.getOfType(collider, collidee, Crib);
+            if (game.countEnemies() === 0) {
+                game.crib.safeTouch();
+                game.safeKiddo = new SafeKiddo();
+            }
         }
     }
 
@@ -219,6 +236,16 @@ define('app/game', [
         }
     }
 
+    class SafeKiddo {
+        constructor() {
+            this.x = 70;
+            this.y = 250;
+        }
+        draw(context) {
+            context.drawImage(images.safe_kiddo, this.x, this.y);
+        }
+    }
+
     class GoodNight {
         constructor() {
             this.x = 191;
@@ -235,13 +262,34 @@ define('app/game', [
             this.isStatic = true;
             this.name = "Crib";
             this.hp = 15;
+            this.crib_spritesheet = SpriteSheet.new(images.crib, {
+                frames: [4000, 200, 200],
+                x: 0,
+                y: 0,
+                width: 372 / 3,
+                height: 80,
+                restart: true,
+                autoPlay: true
+            });
+            this.safe = false;
+        }
+        safeTouch() {
+            this.safe = true;
         }
         damage() {
             this.hp--;
         }
+        tick() {
+            this.crib_spritesheet.tick();
+        }
         draw3d() {
+            //var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            //context.drawImage(images.crib, screenPos.x - 50, screenPos.y - 50);
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            context.drawImage(images.crib, screenPos.x - 50, screenPos.y - 50);
+            context.save();
+            context.translate(screenPos.x - 50, screenPos.y - 50)
+            this.crib_spritesheet.draw(context);
+            context.restore();
         }
     }
 
@@ -618,11 +666,11 @@ define('app/game', [
             this.movement.x = this.movement.x * 0.65;
             this.movement.y = this.movement.y * 0.65;
             var attemptedHitBox = {
-                    x: this.hitbox.x + this.movement.x,
-                    y: this.hitbox.y + this.movement.y,
-                    width: this.hitbox.width,
-                    height: this.hitbox.height,
-                }
+                x: this.hitbox.x + this.movement.x,
+                y: this.hitbox.y + this.movement.y,
+                width: this.hitbox.width,
+                height: this.hitbox.height,
+            }
             this.game.attemptMove(this, attemptedHitBox);
         }
         draw3d(context) {
@@ -799,7 +847,7 @@ define('app/game', [
         },
         tick: function(delta) {
 
-            if (!game.endCondition()) {
+            if (game.endCondition() === 'false') {
                 _.each(gameObjects, function(gameObject) {
                     gameObject.tick(delta);
                 });
@@ -852,8 +900,9 @@ define('app/game', [
             context.restore();
 
             game.goodnightText && game.goodnightText.draw(context);
+            game.safeKiddo && game.safeKiddo.draw(context);
 
-            if (game.endCondition()) {
+            if (game.endCondition() === 'gameover') {
                 context.drawImage(images.gameover, 102, 228);
             }
         }
