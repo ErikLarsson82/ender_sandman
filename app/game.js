@@ -21,7 +21,9 @@ define('app/game', [
     
     const TILE_SIZE = 14 * 4;
     var gameObjects = [];
-    var game = {}
+    var game = {
+        calm: true,
+    }
     
     game.distance = function(obj1, obj2) {
         const dx = obj2.x - obj1.x
@@ -217,6 +219,16 @@ define('app/game', [
         }
     }
 
+    class GoodNight {
+        constructor() {
+            this.x = 191;
+            this.y = 312;
+        }
+        draw(context) {
+            context.drawImage(images.goodnight_text, this.x, this.y);
+        }
+    }
+
     class Crib extends GameObject {
         constructor(config) {
             super(config);
@@ -295,7 +307,7 @@ define('app/game', [
             var angle = game.getAngle({x: this.hitbox.x - game.player.hitbox.x, y: this.hitbox.y - game.player.hitbox.y})
             var jumpX = Math.cos(angle) * -20;
             var jumpY = Math.sin(angle) * -20;
-            this.action = new TimedAction(2000, function() {
+            this.action = new TimedAction(700, function() {
                 this.reset();
                 this.state = 'jumping';
                 this.movement.x = jumpX;
@@ -475,6 +487,7 @@ define('app/game', [
                 y: 0
             }
             this.immunityTimer = null;
+            this.hasReleasedButton = false;
 
             this.walk_spritesheet = SpriteSheet.new(images.player_walk, {
                 frames: [200, 200],
@@ -566,9 +579,24 @@ define('app/game', [
                 this.move();
                 return;
             }
-            this.color = "#cccccc"
+            this.color = "#cccccc";
 
+            (game.calm) ? this.handleCalm(pad) : this.handleUserInput(pad, delta);
+        }
+        handleCalm(pad) {
             if (pad.buttons[2].pressed) {
+                game.loadEnemies();
+                game.calm = false;
+                game.goodnightText = null;
+                this.hasReleasedButton = false;
+            }
+        }
+        handleUserInput(pad, delta) {
+            if (pad.buttons[2].pressed === false && this.hasReleasedButton === false) {
+                this.hasReleasedButton = true;
+            }
+            if (pad.buttons[2].pressed && this.hasReleasedButton) {
+                this.hasReleasedButton = false;
                 this.punch();
             } else {
                 var xDelta = pad.axes[0] * delta / 3;
@@ -684,7 +712,7 @@ define('app/game', [
     var canvas = document.getElementById('canvas');
     var context = canvas.getContext('2d');
 
-    function loadLevel() {
+    game.loadLevel = function() {
         _.each(level.getLevel(), function(row, rowIdx) {
           _.each(row, function(column, colIdx) {
             switch(column) {
@@ -712,6 +740,27 @@ define('app/game', [
                 });
                 gameObjects.push(tile);
               break;
+              case 9:
+                game.crib = new Crib({
+                    hitbox: {
+                        x: colIdx * TILE_SIZE,
+                        y: rowIdx * TILE_SIZE,
+                        width: TILE_SIZE,
+                        height: TILE_SIZE
+                    },
+                    game: game,
+                });
+                gameObjects.push(game.crib);
+              break;
+            }
+          })
+      })
+    }
+
+    game.loadEnemies = function() {
+        _.each(level.getLevel(), function(row, rowIdx) {
+          _.each(row, function(column, colIdx) {
+            switch(column) {
               case 3:
                 var enemy = new Enemy({
                     hitbox: {
@@ -738,18 +787,6 @@ define('app/game', [
                 });
                 gameObjects.push(enemy);
               break;
-              case 9:
-                game.crib = new Crib({
-                    hitbox: {
-                        x: colIdx * TILE_SIZE,
-                        y: rowIdx * TILE_SIZE,
-                        width: TILE_SIZE,
-                        height: TILE_SIZE
-                    },
-                    game: game,
-                });
-                gameObjects.push(game.crib);
-              break;
             }
           })
       })
@@ -757,7 +794,8 @@ define('app/game', [
 
     return {
         init: function() {
-            loadLevel();
+            game.loadLevel();
+            game.goodnightText = new GoodNight();
         },
         tick: function(delta) {
 
@@ -788,20 +826,22 @@ define('app/game', [
                 context.restore();
             }
 
-            context.fillStyle = "white"
-            context.fillRect(20, 20, 300, 30)
-            context.fillStyle = "black"
-            context.fillRect(22, 22, 296, 26)
-            context.fillStyle = "blue"
-            context.fillRect(24, 24, (game.crib.hp / 15) * 292, 22)
+            if (!game.calm) {
+                context.fillStyle = "white"
+                context.fillRect(20, 20, 300, 30)
+                context.fillStyle = "black"
+                context.fillRect(22, 22, 296, 26)
+                context.fillStyle = "blue"
+                context.fillRect(24, 24, (game.crib.hp / 15) * 292, 22)
 
-            context.fillStyle = "white"
-            context.fillRect(320 + 20, 20, 300, 30)
-            context.fillStyle = "black"
-            context.fillRect(320 + 22, 22, 296, 26)
-            context.fillStyle = "red"
-            context.fillRect(320 + 24, 24, (game.player.hp / 10) * 292, 22)
-
+                context.fillStyle = "white"
+                context.fillRect(320 + 20, 20, 300, 30)
+                context.fillStyle = "black"
+                context.fillRect(320 + 22, 22, 296, 26)
+                context.fillStyle = "red"
+                context.fillRect(320 + 24, 24, (game.player.hp / 10) * 292, 22)
+            }
+                
             context.save()
             context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
                 
@@ -810,6 +850,8 @@ define('app/game', [
             });
 
             context.restore();
+
+            game.goodnightText && game.goodnightText.draw(context);
 
             if (game.endCondition()) {
                 context.drawImage(images.gameover, 102, 228);
