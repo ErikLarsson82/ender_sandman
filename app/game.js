@@ -271,7 +271,8 @@ define('app/game', [
         hurt(direction) {
             this.playerDamage = 0;
             this.state = 'hurt';
-            this.action = new TimedAction(2000, function() {
+            this.action = new TimedAction(20, function() {
+                //hmm this one is not neccessary
                 this.reset();
             }.bind(this))
             this.movement.x = direction.x * 8;
@@ -304,7 +305,7 @@ define('app/game', [
             this.jump_spritesheet.tick();
             this.attack_spritesheet.tick();
             
-            if (Math.abs(this.movement.x) > 0.1 || Math.abs(this.movement.y) > 0.1) {
+            if (Math.abs(this.movement.x) > 0.2 || Math.abs(this.movement.y) > 0.2) {
                 //Enemy is sliding across the floor
                 this.movement.x = this.movement.x * 0.94;
                 this.movement.y = this.movement.y * 0.94;
