@@ -268,16 +268,16 @@ define('app/game', [
             this.chasingPlayer = false;
         }
         immune() {
-            this.isColliding = false;
-            this.recover = new TimedAction(2000, function() {
-                this.reset();
-            }.bind(this))
+            
         }
         hurt(direction) {
+            this.isColliding = false;
+            this.recover = new TimedAction(1000, function() {
+                this.reset();
+            }.bind(this))
             this.movement.x = direction.x * 14;
             this.movement.y = direction.y * 14;
             this.chasingPlayer = true;
-            this.reset();
             this.hp--;
             if (this.hp <= 0) this.destroy();
         }
@@ -430,26 +430,31 @@ define('app/game', [
             super(config);
             this.color = "#cccccc"
             this.name = "Player"
-            this.recover = null;
-            this.isBusy = false;
+            this.action = null;
             this.previousDirectionX = 1;
             this.previousDirectionY = 0;
             this.hp = 10;
+            this.movement = {
+                x: 0,
+                y: 0
+            }
         }
         hurt() {
             this.hp--;
+            this.movement.x = 0;
+            this.movement.y = 0;
             this.isColliding = false;
-            this.recover = new TimedAction(1000, function() {
+            this.action = new TimedAction(1000, function() {
                 this.reset();
             }.bind(this))
         }
         reset() {
-            this.recover = null;
+            this.action = null;
             this.isColliding = true;
-            this.isBusy = false;
         }
         punch() {
-            this.isBusy = true;
+            this.movement.x = this.previousDirectionX * 50;
+            this.movement.y = this.previousDirectionY * 50;
             var punchConfig = {
                 hitbox: {
                     x: this.hitbox.x + (this.previousDirectionX * TILE_SIZE),
@@ -464,9 +469,6 @@ define('app/game', [
                 game: game
             }
             gameObjects.push(new Punch(punchConfig));
-            this.recover = new TimedAction(800, function() {
-                this.reset();
-            }.bind(this))
         }
         setDirection(x, y) {
             if (x === 0 && y === 0) return;
@@ -477,13 +479,21 @@ define('app/game', [
             var pad = userInput.getInput(0);
             debugWriteButtons(pad);
             this.setDirection(pad.axes[0], pad.axes[1]);
-            
-            this.recover && this.recover.tick();
 
+            if (this.action) {
+                this.action.tick();
+                return;
+            }
+            if (Math.abs(this.movement.x) < 0.1 && Math.abs(this.movement.y) < 0.1) {
+                this.movement.x = 0;
+                this.movement.y = 0;
+            } else {
+                this.move();
+                return;
+            }
             this.color = "#cccccc"
 
             if (pad.buttons[2].pressed) {
-                if (this.isBusy) return;
                 this.punch();
             } else {
                 var attemptedHitBox = {
@@ -495,6 +505,17 @@ define('app/game', [
                 this.game.attemptMove(this, attemptedHitBox);
             }
             
+        }
+        move() {
+            this.movement.x = this.movement.x * 0.5;
+            this.movement.y = this.movement.y * 0.5;
+            var attemptedHitBox = {
+                    x: this.hitbox.x + this.movement.x,
+                    y: this.hitbox.y + this.movement.y,
+                    width: this.hitbox.width,
+                    height: this.hitbox.height,
+                }
+            this.game.attemptMove(this, attemptedHitBox);
         }
         draw3d(context) {
             if (!this.isColliding) context.globalAlpha = 0.5;
@@ -513,14 +534,14 @@ define('app/game', [
                 this.destroy();
             }.bind(this));
             this.movement = {
-                x: this.direction.x * 10,
-                y: this.direction.y * 10,
+                x: this.direction.x * 15,
+                y: this.direction.y * 15,
             }
         }
         tick() {
             this.counter.tick();
-            this.movement.x = this.movement.x * 0.7;
-            this.movement.y = this.movement.y * 0.7;
+            this.movement.x = this.movement.x * 0.8;
+            this.movement.y = this.movement.y * 0.8;
             var attemptedHitBox = {
                     x: this.hitbox.x + this.movement.x,
                     y: this.hitbox.y + this.movement.y,
