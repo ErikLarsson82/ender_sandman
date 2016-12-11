@@ -65,6 +65,7 @@ define('app/game', [
     }
 
     game.fadeoutAndShowText = function() {
+        console.log('fade out show text');
         game.betweenText = new BetweenText();
         game.fader.deltaOut = 0.6;
         game.fader.fadeOut();
@@ -148,10 +149,13 @@ define('app/game', [
 
     game.resolveCollision = function(collider, newHitbox, collidee) {
         if (game.isOfTypes(collider, collidee, Player, Switch)) {
+            if (!game.beforeFight) return;
+
             var theSwitch = game.getOfType(collider, collidee, Switch);
             var player = game.getOfType(collider, collidee, Player);
             theSwitch.hit();
             game.ceilinglamp.light = false;
+            game.beforeFight = false;
             game.startAction()
         }
 
@@ -171,7 +175,7 @@ define('app/game', [
         if (game.isOfTypes(collider, collidee, Player, Crib)) {
             var player = game.getOfType(collider, collidee, Player);
             var crib = game.getOfType(collider, collidee, Crib);
-            if (game.countSpawnsAndEnemies() === 0) {
+            if (game.countSpawnsAndEnemies() === 0 && !game.beforeFight) {
                 game.gameWon();
             }
         }
@@ -453,6 +457,7 @@ define('app/game', [
 
     class Spawner extends GameObject {
         constructor(config) {
+            console.log('new spawner')
             super(config);
             this.isStatic = false;
             this.isColliding = false;
@@ -472,10 +477,13 @@ define('app/game', [
         tick() {
             this.rift_spritesheet.tick();
             this.spawning++;
-            if (this.spawning > 1000 && this.enemies > 0) {
+            if (this.spawning > 1000) {
                 this.spawn();
                 this.spawning = 0;
                 this.enemies--;
+            }
+            if (this.enemies <= 0) {
+                this.destroy();
             }
         }
         drawFloor(context) {
@@ -880,16 +888,17 @@ define('app/game', [
             this.counter = 0;
         }
         afterFight() {
+            console.log('afterfight')
             this.idx = 1000;
             this.counter = 0;
         }
         tick() {
+            console.log('textswitcher counter', this.counter, this.idx);
             this.counter++;
             if (this.idx === -1) {
                 //during
                 if (this.counter > 200) {
                     this.idx = 999;
-                    this.tick = function() {}
                 }
             } else if (this.idx === 1000) {
                 //after fight
@@ -1009,6 +1018,7 @@ define('app/game', [
             this.previousDirectionY = y;
         }
         tick(delta) {
+            console.log('player tick')
             this.textSwitcher.tick();
             this.walkedThisTick = false;
             this.swing_spritesheet.tick();
@@ -1321,6 +1331,7 @@ define('app/game', [
     game.init = function(level, playSound) {
         gameObjects = [];
         game.calm = true;
+        game.beforeFight = true;
         game.levelIdx = level;
         game.playSound = playSound;
         game.playSound('music_intro');
@@ -1344,6 +1355,7 @@ define('app/game', [
         game.hasReleasedButton = null;
         game.player = null;
         game.screenShaker = null;
+        game.beforeFight = null;
     }
 
     window.game = game
