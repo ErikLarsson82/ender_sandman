@@ -17,7 +17,7 @@ define('app/game', [
 ) {
     var DEBUG_WRITE_BUTTONS = false;
     var DEBUG_NO_2D = true;
-    var DEBUG_KEYBOARD = false;
+    var DEBUG_KEYBOARD = true;
 
     const TILE_SIZE = 14 * 4;
     var gameObjects = [];
@@ -65,7 +65,6 @@ define('app/game', [
     }
 
     game.fadeoutAndShowText = function() {
-        console.log('fade out show text');
         game.betweenText = new BetweenText();
         game.fader.deltaOut = 0.6;
         game.fader.fadeOut();
@@ -234,9 +233,11 @@ define('app/game', [
 
     if (DEBUG_KEYBOARD) {
         window.addEventListener("keydown", function(e) {
-            console.log(e.keyCode);
-            if (e.keyCode === 67) {
-                scroller.active = true;
+            if (e.keyCode === 81) {
+                _.each(gameObjects, function(item) {
+                    if (item instanceof Enemy) item.destroy()
+                    if (item instanceof Spawner) item.destroy()
+                })
             }
         })
     }
@@ -509,7 +510,6 @@ define('app/game', [
             } else {
                 var rand = Math.random();
                 if (rand > 0.5) {
-                    console.log('chasing crib')
                     var enemy = new Enemy({
                     hitbox: {
                             x: this.hitbox.x,
@@ -522,7 +522,6 @@ define('app/game', [
                     });
                     gameObjects.push(enemy);
                 } else if (rand > 0.25) {
-                    console.log('chasing player')
                     var enemy = new Enemy({
                     hitbox: {
                             x: this.hitbox.x,
@@ -535,7 +534,6 @@ define('app/game', [
                     });
                     gameObjects.push(enemy);
                 } else {
-                    console.log('idle')
                     var enemy = new Enemy({
                     hitbox: {
                             x: this.hitbox.x,
@@ -918,12 +916,39 @@ define('app/game', [
             this.idx = 0;
             this.texts = {
                 before: [
-                    images.text1,
-                    images.text2,
-                    images.text3
+                    [
+                        images.text1,
+                        images.text2,
+                        images.text3
+                    ],
+                    [
+                        images.text7,
+                        images.text8,
+                        images.text9
+                    ],
+                    [
+                        images.text13,
+                        images.text14,
+                        images.text15
+                    ],
+                    [
+                        images.text19,
+                        images.text20,
+                        images.text21
+                    ]
                 ],
-                during: images.text4,
-                after: images.text5,
+                during: [
+                    images.text4,
+                    images.text10,
+                    images.text16,
+                    images.text22,
+                ],
+                after: [
+                    images.text5,
+                    images.text11,
+                    images.text17,
+                    images.text23,
+                ]
             }
             this.counter = 0;
         }
@@ -932,7 +957,6 @@ define('app/game', [
             this.counter = 0;
         }
         afterFight() {
-            console.log('afterfight')
             this.idx = 1000;
             this.counter = 0;
         }
@@ -952,7 +976,7 @@ define('app/game', [
                 }
             } else {
                 //before fight
-                if (this.counter > 270 && this.idx < this.texts.before.length - 1) {
+                if (this.counter > 270 && this.idx < this.texts.before[game.levelIdx].length - 1) {
                     this.counter = 0;
                     this.idx++;
                 }
@@ -962,11 +986,11 @@ define('app/game', [
             if (this.idx === 999 || this.idx === 1001) return;
 
             if (this.idx === -1) {
-                context.drawImage(this.texts.during, pos.x, pos.y);
+                context.drawImage(this.texts.during[game.levelIdx], pos.x, pos.y);
             } else if (this.idx === 1000) {
-                context.drawImage(this.texts.after, pos.x, pos.y);
-            } else{
-                context.drawImage(this.texts.before[this.idx], pos.x, pos.y);
+                context.drawImage(this.texts.after[game.levelIdx], pos.x, pos.y);
+            } else {
+                context.drawImage(this.texts.before[game.levelIdx][this.idx], pos.x, pos.y);
             }
         }
     }
@@ -1151,8 +1175,8 @@ define('app/game', [
         }
         draw3dTextoverlay() {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            screenPos.x = screenPos.x - 280;
-            screenPos.y = screenPos.y + 50;
+            screenPos.x = screenPos.x - 540;
+            screenPos.y = screenPos.y + 10;
             this.textSwitcher.renderText(context, screenPos)
         }
         draw3dIdle() {
