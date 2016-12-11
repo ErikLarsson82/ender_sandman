@@ -782,7 +782,7 @@ define('app/game', [
             this.safe = true;
         }
         damage() {
-            game.playSound('cribdmg')
+            game.playSound('childdmg')
             this.hp--;
             this.game.screenShaker.shake();
             if (this.hp <= 0) game.gameOver();
@@ -873,7 +873,10 @@ define('app/game', [
             this.movement.y = direction.y * 8;
             this.chasingPlayer = true;
             this.hp--;
-            if (this.hp <= 0) this.destroy();
+            if (this.hp <= 0) {
+                this.destroy();
+                game.playSound('enemydie')
+            }
         }
         reset() {
             this.action = null;
@@ -1206,6 +1209,7 @@ define('app/game', [
         }
         hurt(dmg) {
             if (dmg === 0) return;
+            game.playSound('hurt')
             this.hp--;
             this.isColliding = false;
             this.immunityTimer = new TimedAction(1000, function() {

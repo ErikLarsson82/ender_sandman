@@ -55,12 +55,18 @@ requirejs([
     const jump2 = new Audio('assets/sounds/jump2.ogg')
     const jump3 = new Audio('assets/sounds/jump3.ogg')
     const swing = new Audio('assets/sounds/swing.ogg')
+    const enemydie = new Audio('assets/sounds/enemydie.ogg')
+    const hurt = new Audio('assets/sounds/hurt.ogg')
+    const childdmg = new Audio('assets/sounds/childdmg.ogg')
     
     const sfxs = {
         fear: fear,
         music_intro: music_intro,
         music_ending: music_ending,
         cribdmg: cribdmg, 
+        childdmg: childdmg, 
+        hurt: hurt,
+        enemydie: enemydie,
         darkness: darkness,
         jump1: jump1,
         jump2: jump2,
