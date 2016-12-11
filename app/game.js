@@ -76,7 +76,6 @@ define('app/game', [
     }
 
     game.gameWon = function() {
-        console.log('gameWon', game.crib.safe);
         if (game.crib.safe) return;
         game.crib.safeTouch();
         game.calm = true;
@@ -503,7 +502,6 @@ define('app/game', [
 
     class Spawner extends GameObject {
         constructor(config) {
-            console.log('new spawner')
             super(config);
             this.isStatic = false;
             this.isColliding = false;
@@ -659,7 +657,6 @@ define('app/game', [
 
     class Crib extends GameObject {
         constructor(config) {
-            console.log('new crib')
             super(config);
             this.isStatic = true;
             this.name = "Crib";
@@ -745,7 +742,6 @@ define('app/game', [
         }
         safeTouch() {
             this.safe = true;
-            console.log('safe')
         }
         damage() {
             game.playSound('cribdmg')
@@ -1160,6 +1156,15 @@ define('app/game', [
                 restart: true,
                 autoPlay: true
             });
+            this.die_spritesheet = SpriteSheet.new(images.player_die, {
+                frames: [400, 400, 400, 400],
+                x: 0,
+                y: 0,
+                width: 256 / 4,
+                height: 84,
+                restart: false,
+                autoPlay: false
+            });
         }
         hurt(dmg) {
             if (dmg === 0) return;
@@ -1169,7 +1174,10 @@ define('app/game', [
                 this.isColliding = true;
             }.bind(this))
             this.game.screenShaker.shake();
-            if (this.hp <= 0) game.gameOver();
+            if (this.hp <= 0) {
+                this.die_spritesheet.play();
+                game.gameOver();
+            }
         }
         reset() {
             this.action = null;
@@ -1208,12 +1216,16 @@ define('app/game', [
             this.walkedThisTick = false;
             this.swing_spritesheet.tick();
             this.idle_spritesheet.tick();
+            this.die_spritesheet.tick();
+            
+            if (this.hp <= 0) return;
 
             var pad = userInput.getInput(0);
             debugWriteButtons(pad);
             this.setDirection(pad.axes[0], pad.axes[1]);
 
             this.immunityTimer && this.immunityTimer.tick();
+
 
             if (this.action) {
                 this.action.tick();
@@ -1278,12 +1290,21 @@ define('app/game', [
             context.translate(screenPos.x, screenPos.y - images.player_shadow.height + 26)
             context.drawImage(images.player_shadow, 0, 0);
             context.restore();
-            if (this.state === 'idle') {
+            if (this.hp <= 0) {
+                this.draw3dDie();
+            } else if (this.state === 'idle') {
                 (this.walkedThisTick) ? this.draw3dWalking() : this.draw3dIdle();
             } else if (this.state === 'punch') {
                 this.draw3dSwing();
             }
             context.globalAlpha = 1;
+        }
+        draw3dDie() {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.player_idle.height + 20)
+            this.die_spritesheet.draw(context);
+            context.restore();
         }
         draw3dMask(context) {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)

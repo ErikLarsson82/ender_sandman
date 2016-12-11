@@ -78,7 +78,7 @@ requirejs([
       }
     }
 
-    game.init(0, playSound);
+    game.init(1, playSound);
 
     var tick = function(delta) {
         if (!running) return;

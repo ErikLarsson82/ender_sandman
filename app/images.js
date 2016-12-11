@@ -98,6 +98,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var player_shadow = new Image();
   player_shadow.src = "./assets/images/player_shadow.png";
 
+  var player_die = new Image();
+  player_die.src = "./assets/images/player_die.png";
+
   var player_light = new Image();
   player_light.src = "./assets/images/player_light.png";
 
@@ -207,6 +210,7 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
     player_idle: player_idle,
     player_swing: player_swing,
     player_walk: player_walk,
+    player_die: player_die,
     weapon_swing: weapon_swing,
     crib_calm: crib_calm,
     crib_action: crib_action,
