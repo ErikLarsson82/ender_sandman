@@ -121,17 +121,16 @@ define('app/game', [
     }
 
     game.resolveCollision = function(collider, newHitbox, collidee) {
-        if (game.isOfTypes(collider, collidee, Player, Tile)) {
-            var tile = game.getOfType(collider, collidee, Tile);
+        if (game.isOfTypes(collider, collidee, Player, Switch)) {
+            var theSwitch = game.getOfType(collider, collidee, Switch);
             var player = game.getOfType(collider, collidee, Player);
-            //tile.test();
-            //player.test();
+            theSwitch.hit();
+            game.ceilinglamp.light = false;
         }
 
         if (game.isOfTypes(collider, collidee, Player, Enemy)) {
             var enemy = game.getOfType(collider, collidee, Enemy);
             var player = game.getOfType(collider, collidee, Player);
-            //enemy.immune();
             player.hurt(enemy.playerDamage);
         }
 
@@ -388,9 +387,9 @@ define('app/game', [
             context.fillRect(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
             context.globalAlpha = 1;
         }
-        draw3d() {
-
-        }
+        draw3d() {}
+        drawLights() {}
+        drawDecor() {}
     }
 
     class Tile extends GameObject {
@@ -398,6 +397,64 @@ define('app/game', [
             super(config);
             this.isStatic = true;
             this.name = "Tile";
+        }
+    }
+
+    class Lightsource extends GameObject {
+        constructor(config) {
+            super(config);
+            this.name = "Lightsource";
+            this.imageLight = config.imageLight;
+            this.imageDark = config.imageDark;
+            this.isColliding = false;
+            this.light = true;
+        }
+        drawLights(context) {
+            context.globalAlpha = 0.7;
+            var image = (this.light) ? this.imageLight : this.imageDark;
+            context.drawImage(image, this.hitbox.x, this.hitbox.y)
+            context.globalAlpha = 1;
+        }
+    }
+
+    class Decor extends GameObject {
+        constructor(config) {
+            super(config);
+            this.name = "Decor";
+            this.image = config.image;
+            this.isColliding = false;
+        }
+        drawDecor(context) {
+            context.drawImage(this.image, this.hitbox.x, this.hitbox.y)
+        }
+    }
+
+    class Switch extends Tile {
+        constructor(config) {
+            super(config);
+            this.name = "Switch";
+            this.switch_spritesheet = SpriteSheet.new(images.lightswitch, {
+                frames: [2000, 50, 50, 50, 50, 50, 50, 50, 50],
+                x: 0,
+                y: 0,
+                width: 216 / 9,
+                height: 24,
+                restart: true,
+                autoPlay: true
+            });
+        }
+        tick() {
+            this.switch_spritesheet.tick()
+        }
+        hit() {
+            this.switch_spritesheet.stop();
+        }
+        draw3d(context) {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x + 45, screenPos.y - 26)
+            this.switch_spritesheet.draw(context);
+            context.restore();
         }
     }
 
@@ -410,16 +467,6 @@ define('app/game', [
             context.drawImage(images.safe_kiddo, this.x, this.y);
         }
     }
-
-    /*class GoodNight {
-        constructor() {
-            this.x = 191;
-            this.y = 312;
-        }
-        draw(context) {
-            context.drawImage(images.goodnight_text, this.x, this.y);
-        }
-    }*/
 
     class Crib extends GameObject {
         constructor(config) {
@@ -857,7 +904,6 @@ define('app/game', [
                 game.calm = false;
                 game.playSound('music_intro', true);
                 game.playSound('darkness')
-                //game.goodnightText = null;
                 this.hasReleasedButton = false;
             }
             this.handleArrows(pad, delta, 10)
@@ -1017,6 +1063,58 @@ define('app/game', [
                 });
                 gameObjects.push(tile);
               break;
+              case 5:
+                var theSwitch = new Switch({
+                    hitbox: {
+                        x: colIdx * TILE_SIZE,
+                        y: rowIdx * TILE_SIZE,
+                        width: TILE_SIZE,
+                        height: TILE_SIZE
+                    },
+                    game: game,
+                });
+                gameObjects.push(theSwitch);
+              break;
+              case 6:
+                game.ceilinglamp = new Lightsource({
+                    hitbox: {
+                        x: 50 * 4,
+                        y: 21 * 4,
+                        width: null,
+                        height: null
+                    },
+                    imageLight: images.ceilinglamp_cone,
+                    imageDark: images.ceilinglamp_full,
+                    game: game,
+                });
+                gameObjects.push(game.ceilinglamp);
+              break;
+              case 7:
+                var lamp = new Decor({
+                    hitbox: {
+                        x: 76 * 4,
+                        y: 11 * 4,
+                        width: null,
+                        height: null
+                    },
+                    image: images.ceilinglamp,
+                    game: game,
+                });
+                gameObjects.push(lamp);
+              break;
+              case 8:
+                var darkness = new Lightsource({
+                    hitbox: {
+                        x: 0,
+                        y: 0,
+                        width: null,
+                        height: null
+                    },
+                    imageLight: images.darkness_background,
+                    game: game,
+                });
+                gameObjects.push(darkness);
+              break;
               case 9:
                 game.crib = new Crib({
                     hitbox: {
@@ -1074,7 +1172,6 @@ define('app/game', [
             game.playSound = playSound;
             game.playSound('music_intro');
             game.loadLevel();
-            //game.goodnightText = new GoodNight();
             game.screenShaker = new ScreenShaker();
             game.fader = new Fader();
             game.fader.fadeIn();
@@ -1137,7 +1234,14 @@ define('app/game', [
 
             context.restore();
 
-            //game.goodnightText && game.goodnightText.draw(context);
+            _.each(gameObjects, function(gameObject) {
+                gameObject.drawDecor(context);
+            });
+
+            _.each(gameObjects, function(gameObject) {
+                gameObject.drawLights(context);
+            });
+
             game.safeKiddo && game.safeKiddo.draw(context);
 
             game.screenShaker.restore(context);

@@ -5,6 +5,21 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var gameover = new Image();
   gameover.src = "./assets/images/gameover.png";
 
+  var lightswitch = new Image();
+  lightswitch.src = "./assets/images/lightswitch.png";
+
+  var darkness_background = new Image();
+  darkness_background.src = "./assets/images/darkness_background.png";
+
+  var ceilinglamp_cone = new Image();
+  ceilinglamp_cone.src = "./assets/images/ceilinglamp_cone.png";
+
+  var ceilinglamp_full = new Image();
+  ceilinglamp_full.src = "./assets/images/ceilinglamp_full.png";
+
+  var ceilinglamp = new Image();
+  ceilinglamp.src = "./assets/images/ceiling_lamp.png";
+
   var goodnight_text = new Image();
   goodnight_text.src = "./assets/images/goodnight_text.png";
 
@@ -62,6 +77,11 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   return {
     background: background,
     gameover: gameover,
+    darkness_background: darkness_background,
+    lightswitch: lightswitch,
+    ceilinglamp_cone: ceilinglamp_cone,
+    ceilinglamp_full: ceilinglamp_full,
+    ceilinglamp: ceilinglamp,
     goodnight_text: goodnight_text,
     text1: text1,
     text2: text2,
