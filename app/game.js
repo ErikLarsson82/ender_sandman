@@ -462,7 +462,7 @@ define('app/game', [
             this.isStatic = false;
             this.isColliding = false;
             this.name = "Spawner";
-            this.enemies = 1;
+            this.enemies = 2;
             this.spawning = 1000 - (Math.random() * 300);
             this.rift_spritesheet = SpriteSheet.new(images.rift, {
                 frames: [100, 100, 100, 100, 100, 100],
@@ -1185,7 +1185,7 @@ define('app/game', [
     var context = canvas.getContext('2d');
 
     game.loadLevel = function() {
-        _.each(level.getLevel(), function(row, rowIdx) {
+        _.each(level.getLevel(game.levelIdx), function(row, rowIdx) {
           _.each(row, function(column, colIdx) {
             switch(column) {
               case 1:
@@ -1282,7 +1282,7 @@ define('app/game', [
     }
 
     game.loadEnemies = function() {
-        _.each(level.getLevel(), function(row, rowIdx) {
+        _.each(level.getLevel(game.levelIdx), function(row, rowIdx) {
           _.each(row, function(column, colIdx) {
             switch(column) {
               /*case 3:
