@@ -387,6 +387,7 @@ define('app/game', [
             context.fillRect(this.hitbox.x, this.hitbox.y, this.hitbox.width, this.hitbox.height);
             context.globalAlpha = 1;
         }
+        drawFloor() {}
         draw3d() {}
         drawLights() {}
         drawDecor() {}
@@ -400,6 +401,55 @@ define('app/game', [
             super(config);
             this.isStatic = true;
             this.name = "Tile";
+        }
+    }
+
+    class Spawner extends GameObject {
+        constructor(config) {
+            super(config);
+            this.isStatic = false;
+            this.isColliding = false;
+            this.name = "Spawner";
+            this.enemies = 3;
+            this.spawning = 1000 - (Math.random() * 300);
+            this.rift_spritesheet = SpriteSheet.new(images.rift, {
+                frames: [300, 300, 300, 300, 300, 300],
+                x: 0,
+                y: 0,
+                width: 408 / 6,
+                height: 72,
+                restart: true,
+                autoPlay: true
+            });
+        }
+        tick() {
+            this.rift_spritesheet.tick();
+            this.spawning++;
+            if (this.spawning > 1000 && this.enemies > 0) {
+                this.spawn();
+                this.spawning = 0;
+                this.enemies--;
+            }
+        }
+        drawFloor(context) {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.rift.height + 20)
+            this.rift_spritesheet.draw(context);
+            context.restore();
+        }
+        spawn() {
+            
+            var enemy = new Enemy({
+            hitbox: {
+                    x: this.hitbox.x,
+                    y: this.hitbox.y,
+                    width: TILE_SIZE,
+                    height: TILE_SIZE
+                },
+                game: game,
+            });
+            gameObjects.push(enemy);
         }
     }
 
@@ -525,6 +575,19 @@ define('app/game', [
             this.playerDamage = 1;
             this.movement = { x: 0, y: 0 };
             this.shaker = new Shaker();
+            this.spawnDone = false;
+            this.spawn_spritesheet = SpriteSheet.new(images.enemy_spawning, {
+                frames: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+                x: 0,
+                y: 0,
+                width: 884 / 13,
+                height: 72,
+                restart: false,
+                autoPlay: true,
+                callback: function() {
+                    this.spawnDone = true;
+                }.bind(this)
+            });
             this.walk_spritesheet = SpriteSheet.new(images.enemy_walk, {
                 frames: [200, 200],
                 x: 0,
@@ -598,9 +661,12 @@ define('app/game', [
         }
         tick() {
             this.shaker.tick();
+            this.spawn_spritesheet.tick();
             this.walk_spritesheet.tick();
             this.jump_spritesheet.tick();
             this.attack_spritesheet.tick();
+
+            if (!this.spawnDone) return;
 
             if (Math.abs(this.movement.x) > 0.2 || Math.abs(this.movement.y) > 0.2) {
                 //Enemy is sliding across the floor
@@ -699,7 +765,7 @@ define('app/game', [
                     if (this.chasingPlayer) {
                         this.draw3dRunning(context)
                     } else {
-                        this.draw3dSleeping();
+                        this.draw3dSpawning();
                     }
                 break;
                 case 'hurt':
@@ -725,11 +791,11 @@ define('app/game', [
             this.walk_spritesheet.draw(context);
             context.restore();
         }
-        draw3dSleeping() {
+        draw3dSpawning() {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.save();
             context.translate(screenPos.x, screenPos.y - images.enemy_sleep.height + 20)
-            context.drawImage(images.enemy_sleep, 0, 0)
+            this.spawn_spritesheet.draw(context);
             context.restore();
         }
         draw3dJumping() {
@@ -1154,7 +1220,7 @@ define('app/game', [
         _.each(level.getLevel(), function(row, rowIdx) {
           _.each(row, function(column, colIdx) {
             switch(column) {
-              case 3:
+              /*case 3:
                 var enemy = new Enemy({
                     hitbox: {
                         x: colIdx * TILE_SIZE,
@@ -1179,6 +1245,18 @@ define('app/game', [
                     game: game,
                 });
                 gameObjects.push(enemy);
+              break;*/
+              case "a":
+                var spawner = new Spawner({
+                    hitbox: {
+                        x: colIdx * TILE_SIZE,
+                        y: rowIdx * TILE_SIZE,
+                        width: TILE_SIZE,
+                        height: TILE_SIZE
+                    },
+                    game: game,
+                });
+                gameObjects.push(spawner);
               break;
             }
           })
@@ -1250,6 +1328,10 @@ define('app/game', [
 
             context.save()
             context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
+
+            _.each(gameObjects, function(gameObject) {
+                gameObject.drawFloor(context);
+            });
 
             _.each(gameObjects, function(gameObject) {
                 gameObject.draw3d(context);

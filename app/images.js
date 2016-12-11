@@ -11,6 +11,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var darkness_background = new Image();
   darkness_background.src = "./assets/images/darkness_background.png";
 
+  var rift = new Image();
+  rift.src = "./assets/images/rift.png";
+
   var ceilinglamp_cone = new Image();
   ceilinglamp_cone.src = "./assets/images/ceilinglamp_cone.png";
 
@@ -83,6 +86,7 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   return {
     background: background,
     gameover: gameover,
+    rift: rift,
     darkness_background: darkness_background,
     lightswitch: lightswitch,
     ceilinglamp_cone: ceilinglamp_cone,
