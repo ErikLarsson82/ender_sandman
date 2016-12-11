@@ -390,6 +390,9 @@ define('app/game', [
         draw3d() {}
         drawLights() {}
         drawDecor() {}
+        draw3dTextoverlay() {}
+        drawMask() {}
+        draw3dMask() {}
     }
 
     class Tile extends GameObject {
@@ -410,10 +413,15 @@ define('app/game', [
             this.light = true;
         }
         drawLights(context) {
-            context.globalAlpha = 0.7;
+            context.globalAlpha = 0.5;
             var image = (this.light) ? this.imageLight : this.imageDark;
             context.drawImage(image, this.hitbox.x, this.hitbox.y)
             context.globalAlpha = 1;
+        }
+        drawMask(context) {
+            if (this.light) {
+                context.drawImage(images.ceilinglamp_cone, this.hitbox.x, this.hitbox.y)
+            }
         }
     }
 
@@ -959,7 +967,17 @@ define('app/game', [
                 this.draw3dSwing();
             }
             context.globalAlpha = 1;
-
+        }
+        draw3dMask(context) {
+            context.globalAlpha = 0.6;
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.beginPath();
+            context.arc(screenPos.x + 30, screenPos.y - 30, 90, 0, 2 * Math.PI, false);
+            context.fillStyle = 'white';
+            context.fill();
+            context.globalAlpha = 1;
+        }
+        draw3dTextoverlay() {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             screenPos.y  = screenPos.y - 100;
             this.textSwitcher.renderText(context, screenPos)
@@ -1102,7 +1120,7 @@ define('app/game', [
                 });
                 gameObjects.push(lamp);
               break;
-              case 8:
+              /*case 8:
                 var darkness = new Lightsource({
                     hitbox: {
                         x: 0,
@@ -1114,7 +1132,7 @@ define('app/game', [
                     game: game,
                 });
                 gameObjects.push(darkness);
-              break;
+              break;*/
               case 9:
                 game.crib = new Crib({
                     hitbox: {
@@ -1175,6 +1193,11 @@ define('app/game', [
             game.screenShaker = new ScreenShaker();
             game.fader = new Fader();
             game.fader.fadeIn();
+
+            game.offscreenCanvas = document.createElement('canvas');
+            game.offscreenCanvas.width = 800;
+            game.offscreenCanvas.height = 600;
+            game.offscreenContext = game.offscreenCanvas.getContext('2d');
         },
         tick: function(delta) {
 
@@ -1234,7 +1257,7 @@ define('app/game', [
 
             context.restore();
 
-            _.each(gameObjects, function(gameObject) {
+            /*_.each(gameObjects, function(gameObject) {
                 gameObject.drawDecor(context);
             });
 
@@ -1242,6 +1265,44 @@ define('app/game', [
                 gameObject.drawLights(context);
             });
 
+            context.save()
+            context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
+            _.each(gameObjects, function(gameObject) {
+                gameObject.draw3dTextoverlay(context);
+            });
+            context.restore();*/
+
+
+            //game.offscreenContext.fillStyle = "white";
+            //game.offscreenContext.fillRect(0, 0, 800, 600);
+
+            //game.offscreenContext.globalAlpha = 0.5;
+            game.offscreenContext.fillStyle = "black";
+            game.offscreenContext.fillRect(0, 0, 800, 600);
+
+            game.offscreenContext.save()
+            game.offscreenContext.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
+            _.each(gameObjects, function(gameObject) {
+                gameObject.draw3dMask(game.offscreenContext);
+            });
+            game.offscreenContext.restore();
+            _.each(gameObjects, function(gameObject) {
+                gameObject.drawMask(game.offscreenContext);
+            });
+
+            //game.offscreenContext.globalAlpha = 1;
+            /*game.offscreenContext.fillStyle = "white";
+            game.offscreenContext.fillRect(100, 100, 10, 10);
+
+            game.offscreenContext.fillStyle = "white";
+            game.offscreenContext.fillRect(400, 100, 100, 100);*/
+
+            context.globalCompositeOperation = 'darken';
+            context.globalAlpha = 0.8;
+            context.drawImage(game.offscreenCanvas, 0, 0)
+            context.globalAlpha = 1;
+
+            context.globalCompositeOperation = 'source-over';
             game.safeKiddo && game.safeKiddo.draw(context);
 
             game.screenShaker.restore(context);

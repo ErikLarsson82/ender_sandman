@@ -35,6 +35,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var player_shadow = new Image();
   player_shadow.src = "./assets/images/player_shadow.png";
 
+  var player_light = new Image();
+  player_light.src = "./assets/images/player_light.png";
+
   var player_idle = new Image();
   player_idle.src = "./assets/images/player_idle.png";
 
@@ -86,6 +89,7 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
     text1: text1,
     text2: text2,
     safe_kiddo: safe_kiddo,
+    player_light: player_light,
     player_shadow: player_shadow,
     player_idle: player_idle,
     player_swing: player_swing,
