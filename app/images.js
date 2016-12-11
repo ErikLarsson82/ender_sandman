@@ -1,4 +1,10 @@
 define('app/images', ['SpriteSheet'], function(SpriteSheet) {
+  var iron_maiden_start = new Image();
+  iron_maiden_start.src = "./assets/images/iron_maiden_start.png";
+
+  var iron_maiden_loop = new Image();
+  iron_maiden_loop.src = "./assets/images/iron_maiden_loop.png";
+
   var background0 = new Image();
   background0.src = "./assets/images/background0.png";
 
@@ -107,8 +113,29 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var weapon_swing = new Image();
   weapon_swing.src = "./assets/images/weapon_swing.png";
 
-  var crib = new Image();
-  crib.src = "./assets/images/crib.png";
+  var crib_calm = new Image();
+  crib_calm.src = "./assets/images/crib_calm.png";
+
+  var crib_action = new Image();
+  crib_action.src = "./assets/images/crib_action.png";
+
+  var child_calm = new Image();
+  child_calm.src = "./assets/images/child_calm.png";
+
+  var child_action = new Image();
+  child_action.src = "./assets/images/child_action.png";
+
+  var youngster_calm = new Image();
+  youngster_calm.src = "./assets/images/youngster_calm.png";
+
+  var youngster_action = new Image();
+  youngster_action.src = "./assets/images/youngster_action.png";
+
+  var teen_calm = new Image();
+  teen_calm.src = "./assets/images/teen_calm.png";
+
+  var teen_action = new Image();
+  teen_action.src = "./assets/images/teen_action.png";
 
   var punch = new Image();
   punch.src = "./assets/images/punch.png";
@@ -138,6 +165,8 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   enemy_preparing.src = "./assets/images/enemy_preparing.png";
 
   return {
+    iron_maiden_start: iron_maiden_start,
+    iron_maiden_loop: iron_maiden_loop,
     background0: background0,
     background1: background1,
     background2: background2,
@@ -179,7 +208,14 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
     player_swing: player_swing,
     player_walk: player_walk,
     weapon_swing: weapon_swing,
-    crib: crib,
+    crib_calm: crib_calm,
+    crib_action: crib_action,
+    child_calm: child_calm,
+    child_action: child_action,
+    youngster_calm: youngster_calm,
+    youngster_action: youngster_action,
+    teen_calm: teen_calm,
+    teen_action: teen_action,
     punch: punch,
     enemy_spawning: enemy_spawning,
     enemy_sleep: enemy_sleep,

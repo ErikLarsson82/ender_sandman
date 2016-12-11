@@ -44,6 +44,7 @@ define('app/game', [
     game.nextLevel = function() {
         if (game.levelIdx === 3) {
             console.log('SUPER GAME OVER')
+            game.superGameOver = true;
         } else {
             game.destroy();
             game.init(game.levelIdx + 1, game.playSound);
@@ -65,9 +66,13 @@ define('app/game', [
     }
 
     game.fadeoutAndShowText = function() {
-        game.betweenText = new BetweenText();
-        game.fader.deltaOut = 0.6;
-        game.fader.fadeOut();
+        if (game.levelIdx === 3) {
+            game.ironMaiden = new IronMaiden();
+        } else {
+            game.betweenText = new BetweenText();
+            game.fader.deltaOut = 0.6;
+            game.fader.fadeOut();
+        }
     }
 
     game.gameWon = function() {
@@ -240,6 +245,40 @@ define('app/game', [
                 })
             }
         })
+    }
+
+    class IronMaiden {
+        constructor() {
+            this.spritesheet = SpriteSheet.new(images.iron_maiden_start, {
+                frames: [1000, 1000, 1000],
+                x: 0,
+                y: 0,
+                width: 300 / 3,
+                height: 100,
+                restart: false,
+                autoPlay: true,
+                callback: function() {
+                    this.spritesheet = SpriteSheet.new(images.iron_maiden_loop, {
+                        frames: [200, 200],
+                        x: 0,
+                        y: 0,
+                        width: 200 / 2,
+                        height: 100,
+                        restart: true,
+                        autoPlay: true
+                    });
+                }.bind(this)
+            });
+        }
+        tick() {
+            this.spritesheet.tick();
+        }
+        draw() {
+            context.save();
+            context.translate(100, 100)
+            this.spritesheet.draw(context);
+            context.restore();
+        }
     }
 
     class BetweenText {
@@ -625,15 +664,83 @@ define('app/game', [
             this.isStatic = true;
             this.name = "Crib";
             this.hp = 15;
-            this.crib_spritesheet = SpriteSheet.new(images.crib, {
-                frames: [4000, 200, 200],
-                x: 0,
-                y: 0,
-                width: 372 / 3,
-                height: 80,
-                restart: true,
-                autoPlay: true
-            });
+            if (game.levelIdx === 0) {
+                this.calm_spritesheet = SpriteSheet.new(images.crib_calm, {
+                    frames: [4000, 200, 200],
+                    x: 0,
+                    y: 0,
+                    width: 372 / 3,
+                    height: 80,
+                    restart: true,
+                    autoPlay: true
+                });
+                this.action_spritesheet = SpriteSheet.new(images.crib_action, {
+                    frames: [1000, 200],
+                    x: 0,
+                    y: 0,
+                    width: 248 / 2,
+                    height: 80,
+                    restart: true,
+                    autoPlay: true
+                });
+            } else if (game.levelIdx === 1) {
+                this.calm_spritesheet = SpriteSheet.new(images.child_calm, {
+                    frames: [400, 400],
+                    x: 0,
+                    y: 0,
+                    width: 248 / 2,
+                    height: 80,
+                    restart: true,
+                    autoPlay: true
+                });
+                this.action_spritesheet = SpriteSheet.new(images.child_action, {
+                    frames: [2000, 100, 100, 100, 100],
+                    x: 0,
+                    y: 0,
+                    width: 620 / 5,
+                    height: 80,
+                    restart: true,
+                    autoPlay: true
+                });
+            } else if (game.levelIdx === 2) {
+                this.calm_spritesheet = SpriteSheet.new(images.youngster_calm, {
+                    frames: [400, 400],
+                    x: 0,
+                    y: 0,
+                    width: 248 / 2,
+                    height: 80,
+                    restart: true,
+                    autoPlay: true
+                });
+                this.action_spritesheet = SpriteSheet.new(images.youngster_action, {
+                    frames: [1000, 100, 100, 100],
+                    x: 0,
+                    y: 0,
+                    width: 496 / 4,
+                    height: 80,
+                    restart: true,
+                    autoPlay: true
+                });
+            } else {
+                this.calm_spritesheet = SpriteSheet.new(images.teen_calm, {
+                    frames: [100, 100, 100, 1000],
+                    x: 0,
+                    y: 0,
+                    width: 496 / 4,
+                    height: 80,
+                    restart: true,
+                    autoPlay: true
+                });
+                this.action_spritesheet = SpriteSheet.new(images.teen_action, {
+                    frames: [1000, 100, 100, 100],
+                    x: 0,
+                    y: 0,
+                    width: 496 / 4,
+                    height: 80,
+                    restart: true,
+                    autoPlay: true
+                });
+            }
             this.safe = false;
         }
         safeTouch() {
@@ -647,7 +754,8 @@ define('app/game', [
             if (this.hp <= 0) game.gameOver();
         }
         tick() {
-            this.crib_spritesheet.tick();
+            this.calm_spritesheet.tick();
+            this.action_spritesheet.tick();
         }
         draw3d() {
             //var screenPos = game.convertToScreenCoordinates(this.hitbox)
@@ -655,7 +763,12 @@ define('app/game', [
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.save();
             context.translate(screenPos.x - 50, screenPos.y - 50)
-            this.crib_spritesheet.draw(context);
+            if (game.calm) {
+                this.calm_spritesheet.draw(context);
+                
+            } else {
+                this.action_spritesheet.draw(context);
+            }
             context.restore();
         }
     }
@@ -1416,6 +1529,8 @@ define('app/game', [
         game.offscreenCanvas.width = 800;
         game.offscreenCanvas.height = 600;
         game.offscreenContext = game.offscreenCanvas.getContext('2d');
+
+        game.superGameOver = false;
     }
 
     game.destroy = function() {
@@ -1428,6 +1543,8 @@ define('app/game', [
         game.player = null;
         game.screenShaker = null;
         game.beforeFight = null;
+        game.superGameOver = null;
+        game.ironMaiden = null;
     }
 
     window.game = game
@@ -1437,6 +1554,7 @@ define('app/game', [
         tick: function(delta) {
 
             game.fader.tick();
+            game.ironMaiden && game.ironMaiden.tick();
             game.betweenText && game.betweenText.tick();
 
             if (game.endCondition() === 'false') {
@@ -1515,6 +1633,8 @@ define('app/game', [
             game.offscreenContext.restore();
 
             game.screenShaker.restore(context);
+
+            game.ironMaiden && game.ironMaiden.draw()
 
             if (!game.calm) {
                 context.fillStyle = "black"
