@@ -71,6 +71,7 @@ define('app/game', [
     }
 
     game.gameWon = function() {
+        if (game.crib.safe) return;
         game.crib.safeTouch();
         game.playSound('music_ending');
         game.player.textSwitcher.afterFight();
@@ -1428,7 +1429,7 @@ define('app/game', [
             });
 
             context.globalCompositeOperation = 'darken';
-            context.globalAlpha = 0.8;
+            context.globalAlpha = (game.calm) ? 0.5 : 0.9;
             context.drawImage(game.offscreenCanvas, 0, 0)
             context.globalAlpha = 1;
 
