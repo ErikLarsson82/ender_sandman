@@ -463,7 +463,8 @@ define('app/game', [
             this.isColliding = false;
             this.name = "Spawner";
             this.enemies = 2;
-            this.spawning = 1000 - (Math.random() * 300);
+            this.spawnMax = 600;
+            this.spawning = this.spawnMax - (Math.random() * 300);
             this.rift_spritesheet = SpriteSheet.new(images.rift, {
                 frames: [100, 100, 100, 100, 100, 100],
                 x: 0,
@@ -477,7 +478,7 @@ define('app/game', [
         tick() {
             this.rift_spritesheet.tick();
             this.spawning++;
-            if (this.spawning > 1000) {
+            if (this.spawning > this.spawnMax) {
                 this.spawn();
                 this.spawning = 0;
                 this.enemies--;
@@ -494,17 +495,59 @@ define('app/game', [
             context.restore();
         }
         spawn() {
-            
-            var enemy = new Enemy({
-            hitbox: {
-                    x: this.hitbox.x,
-                    y: this.hitbox.y,
-                    width: TILE_SIZE,
-                    height: TILE_SIZE
-                },
-                game: game,
-            });
-            gameObjects.push(enemy);
+            if (game.levelIdx === 0) {
+                var enemy = new Enemy({
+                hitbox: {
+                        x: this.hitbox.x,
+                        y: this.hitbox.y,
+                        width: TILE_SIZE,
+                        height: TILE_SIZE
+                    },
+                    game: game,
+                });
+                gameObjects.push(enemy);
+            } else {
+                var rand = Math.random();
+                if (rand > 0.5) {
+                    console.log('chasing crib')
+                    var enemy = new Enemy({
+                    hitbox: {
+                            x: this.hitbox.x,
+                            y: this.hitbox.y,
+                            width: TILE_SIZE,
+                            height: TILE_SIZE
+                        },
+                        attackingCrib: true,
+                        game: game,
+                    });
+                    gameObjects.push(enemy);
+                } else if (rand > 0.25) {
+                    console.log('chasing player')
+                    var enemy = new Enemy({
+                    hitbox: {
+                            x: this.hitbox.x,
+                            y: this.hitbox.y,
+                            width: TILE_SIZE,
+                            height: TILE_SIZE
+                        },
+                        chasingPlayer: true,
+                        game: game,
+                    });
+                    gameObjects.push(enemy);
+                } else {
+                    console.log('idle')
+                    var enemy = new Enemy({
+                    hitbox: {
+                            x: this.hitbox.x,
+                            y: this.hitbox.y,
+                            width: TILE_SIZE,
+                            height: TILE_SIZE
+                        },
+                        game: game,
+                    });
+                    gameObjects.push(enemy);
+                }
+            }
         }
     }
 
@@ -633,6 +676,8 @@ define('app/game', [
                 autoPlay: true,
                 callback: function() {
                     this.spawnDone = true;
+                    this.chasingPlayer = config.chasingPlayer || false;
+                    this.state = (config.attackingCrib) ? 'attackingCrib' : 'idle';
                 }.bind(this)
             });
             this.walk_spritesheet = SpriteSheet.new(images.enemy_walk, {
@@ -663,8 +708,7 @@ define('app/game', [
                 restart: false,
                 autoPlay: false
             });
-            this.state = (config.attackingCrib) ? 'attackingCrib' : 'idle';
-            this.chasingPlayer = false;
+            this.state = 'idle';
         }
         hurt(direction) {
             this.playerDamage = 0;
@@ -893,7 +937,6 @@ define('app/game', [
             this.counter = 0;
         }
         tick() {
-            console.log('textswitcher counter', this.counter, this.idx);
             this.counter++;
             if (this.idx === -1) {
                 //during
@@ -1018,7 +1061,6 @@ define('app/game', [
             this.previousDirectionY = y;
         }
         tick(delta) {
-            console.log('player tick')
             this.textSwitcher.tick();
             this.walkedThisTick = false;
             this.swing_spritesheet.tick();
