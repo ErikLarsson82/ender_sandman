@@ -246,19 +246,25 @@ define('app/game', [
         constructor() {
             this.counter = 0;
             this.render = false;
+            this.texts = [
+                images.text6,
+                images.text12,
+                images.text12,
+            ]
         }
         tick() {
+            var debugFaster = 1; //0.1;
             this.counter++;
-            if (this.counter > 400 / 20) {
+            if (this.counter > 400 * debugFaster) {
                 game.nextLevel()
-            } else if (this.counter > 300 / 20) {
+            } else if (this.counter > 300 * debugFaster) {
                 this.render = false;
-            } else if (this.counter > 200 / 20) {
+            } else if (this.counter > 200 * debugFaster) {
                 this.render = true;
             }
         }
         draw(context) {
-            (this.render) ? context.drawImage(images.text6, 66 * 4, 66 * 4) : null;
+            (this.render) ? context.drawImage(this.texts[game.levelIdx], -120, 56 * 4) : null;
         }
     }
 
