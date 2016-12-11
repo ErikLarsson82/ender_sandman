@@ -43,6 +43,17 @@ define('app/game', [
         return 'false';
     }
 
+    game.startAction = function() {
+        game.player.textSwitcher.end();
+        game.loadEnemies();
+        game.calm = false;
+        game.playSound('music_intro', true);
+        game.playSound('darkness')
+        this.hasReleasedButton = false;    
+
+        game.startAction = function() {}
+    }
+
     game.gameOver = function() {
         game.fader.fadeOut();
         //game.playSound('')
@@ -126,6 +137,7 @@ define('app/game', [
             var player = game.getOfType(collider, collidee, Player);
             theSwitch.hit();
             game.ceilinglamp.light = false;
+            game.startAction()
         }
 
         if (game.isOfTypes(collider, collidee, Player, Enemy)) {
@@ -825,34 +837,44 @@ define('app/game', [
     class TextSwitcher {
         constructor() {
             this.idx = 0;
-            this.texts = [
-                images.text1,
-                images.text2,
-                images.goodnight_text
-            ]
+            this.texts = {
+                before: [
+                    images.text1,
+                    images.text2,
+                    images.text3
+                ],
+                during: images.text4
+            }
             this.counter = 0;
         }
-        switch() {
-            if (this.idx === -1) {
-                this.idx = 0;
-            } else {
-                this.idx++
-            }
-            if (this.idx > this.texts.length) {
-                this.idx === 999;
-            }
-            return this.idx;
+        end() {
+            this.idx = -1;
+            this.counter = 0;
         }
         tick() {
             this.counter++;
-            if (this.counter > 200) {
-                this.counter = 0;
-                this.idx++;
+            if (this.idx === -1) {
+                //during
+                if (this.counter > 200) {
+                    this.idx = 999;
+                    this.tick = function() {}
+                }
+            } else {
+                //before
+                if (this.counter > 50 && this.idx < this.texts.before.length - 1) { // && 
+                    this.counter = 0;
+                    this.idx++;
+                }
             }
         }
         renderText(context, pos) {
-            if (this.texts[this.idx] === undefined) return;
-            context.drawImage(this.texts[this.idx], pos.x, pos.y);
+            if (this.idx === 999) return;
+
+            if (this.idx === -1) {
+                context.drawImage(this.texts.during, pos.x, pos.y);
+            } else {
+                context.drawImage(this.texts.before[this.idx], pos.x, pos.y);
+            }
         }
     }
 
@@ -973,13 +995,6 @@ define('app/game', [
             (game.calm) ? this.handleCalm(pad, delta) : this.handleUserInput(pad, delta);
         }
         handleCalm(pad, delta) {
-            if (pad.buttons[2].pressed) {
-                game.loadEnemies();
-                game.calm = false;
-                game.playSound('music_intro', true);
-                game.playSound('darkness')
-                this.hasReleasedButton = false;
-            }
             this.handleArrows(pad, delta, 10)
         }
         handleArrows(pad, delta, speed) {
@@ -1043,7 +1058,8 @@ define('app/game', [
         }
         draw3dTextoverlay() {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            screenPos.y  = screenPos.y - 100;
+            screenPos.x = screenPos.x - 280;
+            screenPos.y = screenPos.y + 50;
             this.textSwitcher.renderText(context, screenPos)
         }
         draw3dIdle() {
@@ -1360,6 +1376,14 @@ define('app/game', [
             context.globalAlpha = 1;
 
             context.globalCompositeOperation = 'source-over';
+
+            game.offscreenContext.save()
+            game.offscreenContext.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
+            _.each(gameObjects, function(gameObject) {
+                gameObject.draw3dTextoverlay(game.offscreenContext);
+            });
+            game.offscreenContext.restore();
+
             game.safeKiddo && game.safeKiddo.draw(context);
 
             game.screenShaker.restore(context);

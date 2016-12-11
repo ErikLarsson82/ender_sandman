@@ -1,0 +1,70 @@
+dialogue:
+
+1 ... and thats how the piggy got home.
+
+2 Well, now it's time for bed.
+
+3 Good night. Let me just turn off the lights...
+
+
+
+4 Whats happening?? What is that???
+
+
+Fight!
+
+
+
+5 You're safe now kiddo. I better sleep in here tonight.
+
+Fade
+
+6 3 years later
+
+7 .... and thats how the dragon was defeated.
+
+8 Better get you to bed, you have kindergarden tomorrow.
+
+9 Let me just turn off the lights....
+
+
+10 Wait, not the monsters again!??
+
+Fight
+
+11 You're safe now kiddo. I better sleep in here tonight.
+
+Fade
+
+12 6 years later
+
+
+13 ... and thats how humans once flew to the moon.
+
+14 Time for bed, you have school tomorrow.
+
+15 Let me just turn off the lights....
+
+
+16 Charlie, defend yourself! The monsters are coming!
+
+Fight
+
+17 You're safe now kiddo. I better sleep in here tonight.
+
+18 6 years later
+
+19 ... and thats how Iron Maiden became the best band of all times.
+
+20 Time for bed, you are graduating tomorrow.
+
+21 Let me just turn off the lights....
+
+
+22 Charlie, the monsters are back!! Fight them!
+
+Fight
+
+23 Iron maiden!!??
+
+Iron maiden shows up and saves the day!
