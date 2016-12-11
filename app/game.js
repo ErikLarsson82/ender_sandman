@@ -71,8 +71,10 @@ define('app/game', [
     }
 
     game.gameWon = function() {
+        console.log('gameWon', game.crib.safe);
         if (game.crib.safe) return;
         game.crib.safeTouch();
+        game.calm = true;
         game.playSound('music_ending');
         game.player.textSwitcher.afterFight();
     }
@@ -563,6 +565,7 @@ define('app/game', [
 
     class Crib extends GameObject {
         constructor(config) {
+            console.log('new crib')
             super(config);
             this.isStatic = true;
             this.name = "Crib";
@@ -580,6 +583,7 @@ define('app/game', [
         }
         safeTouch() {
             this.safe = true;
+            console.log('safe')
         }
         damage() {
             game.playSound('cribdmg')
@@ -1382,22 +1386,6 @@ define('app/game', [
                 context.restore();
             }
 
-            if (!game.calm) {
-                context.fillStyle = "white"
-                context.fillRect(20, 20, 300, 30)
-                context.fillStyle = "black"
-                context.fillRect(22, 22, 296, 26)
-                context.fillStyle = "blue"
-                context.fillRect(24, 24, (game.crib.hp / 15) * 292, 22)
-
-                context.fillStyle = "white"
-                context.fillRect(320 + 20, 20, 300, 30)
-                context.fillStyle = "black"
-                context.fillRect(320 + 22, 22, 296, 26)
-                context.fillStyle = "red"
-                context.fillRect(320 + 24, 24, (game.player.hp / 10) * 292, 22)
-            }
-
             context.save()
             context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
 
@@ -1443,6 +1431,25 @@ define('app/game', [
             game.offscreenContext.restore();
 
             game.screenShaker.restore(context);
+
+            if (!game.calm) {
+                context.fillStyle = "black"
+                context.fillRect(0, 0, 800, 60)
+
+                context.fillStyle = "white"
+                context.fillRect(20, 20, 300, 30)
+                context.fillStyle = "black"
+                context.fillRect(22, 22, 296, 26)
+                context.fillStyle = "blue"
+                context.fillRect(24, 24, (game.crib.hp / 15) * 292, 22)
+
+                context.fillStyle = "white"
+                context.fillRect(320 + 20, 20, 300, 30)
+                context.fillStyle = "black"
+                context.fillRect(320 + 22, 22, 296, 26)
+                context.fillStyle = "red"
+                context.fillRect(320 + 24, 24, (game.player.hp / 10) * 292, 22)
+            }
 
             var fade = game.fader.getFade();
             if (fade !== 0) {
