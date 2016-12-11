@@ -69,6 +69,7 @@ define('app/game', [
         if (game.levelIdx === 3) {
             game.ironMaiden = new IronMaiden();
             game.superGameOver = true;
+            game.banishCounter = 0;
             game.playSound('music_ending', true)
             game.playSound('fear')
         } else {
@@ -1570,6 +1571,7 @@ define('app/game', [
         game.offscreenContext = game.offscreenCanvas.getContext('2d');
 
         game.superGameOver = false;
+        game.banishCounter = 0;
     }
 
     game.destroy = function() {
@@ -1584,6 +1586,7 @@ define('app/game', [
         game.beforeFight = null;
         game.superGameOver = null;
         game.ironMaiden = null;
+        game.banishCounter = null;
     }
 
     window.game = game
@@ -1591,6 +1594,7 @@ define('app/game', [
     return {
         init: game.init,
         tick: function(delta) {
+            game.banishCounter++;
 
             game.fader.tick();
             game.ironMaiden && game.ironMaiden.tick();
@@ -1707,6 +1711,10 @@ define('app/game', [
             }
 
             game.betweenText && game.betweenText.draw(context);
+
+            if (game.superGameOver && game.banishCounter > 360) {
+                context.drawImage(images.banish, 30, 10)
+            }
         }
     }
 });

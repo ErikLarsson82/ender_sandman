@@ -32,6 +32,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var rift = new Image();
   rift.src = "./assets/images/rift.png";
 
+  var banish = new Image();
+  banish.src = "./assets/images/banish.png";
+
   var ceilinglamp_cone = new Image();
   ceilinglamp_cone.src = "./assets/images/ceilinglamp_cone.png";
 
@@ -181,6 +184,7 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
     background3: background3,
     gameover: gameover,
     rift: rift,
+    banish: banish,
     lightswitch: lightswitch,
     ceilinglamp_cone: ceilinglamp_cone,
     ceilinglamp_full: ceilinglamp_full,
