@@ -969,11 +969,11 @@ define('app/game', [
             context.globalAlpha = 1;
         }
         draw3dMask(context) {
-            context.globalAlpha = 0.6;
+            //context.globalAlpha = 0.6;
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.beginPath();
             context.arc(screenPos.x + 30, screenPos.y - 30, 90, 0, 2 * Math.PI, false);
-            context.fillStyle = 'white';
+            context.fillStyle = 'gray';
             context.fill();
             context.globalAlpha = 1;
         }
@@ -1257,26 +1257,10 @@ define('app/game', [
 
             context.restore();
 
-            /*_.each(gameObjects, function(gameObject) {
+            _.each(gameObjects, function(gameObject) {
                 gameObject.drawDecor(context);
             });
 
-            _.each(gameObjects, function(gameObject) {
-                gameObject.drawLights(context);
-            });
-
-            context.save()
-            context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
-            _.each(gameObjects, function(gameObject) {
-                gameObject.draw3dTextoverlay(context);
-            });
-            context.restore();*/
-
-
-            //game.offscreenContext.fillStyle = "white";
-            //game.offscreenContext.fillRect(0, 0, 800, 600);
-
-            //game.offscreenContext.globalAlpha = 0.5;
             game.offscreenContext.fillStyle = "black";
             game.offscreenContext.fillRect(0, 0, 800, 600);
 
@@ -1289,13 +1273,6 @@ define('app/game', [
             _.each(gameObjects, function(gameObject) {
                 gameObject.drawMask(game.offscreenContext);
             });
-
-            //game.offscreenContext.globalAlpha = 1;
-            /*game.offscreenContext.fillStyle = "white";
-            game.offscreenContext.fillRect(100, 100, 10, 10);
-
-            game.offscreenContext.fillStyle = "white";
-            game.offscreenContext.fillRect(400, 100, 100, 100);*/
 
             context.globalCompositeOperation = 'darken';
             context.globalAlpha = 0.8;

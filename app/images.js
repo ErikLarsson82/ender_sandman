@@ -59,6 +59,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var enemy_shadow = new Image();
   enemy_shadow.src = "./assets/images/enemy_shadow.png";
 
+  var enemy_spawning = new Image();
+  enemy_spawning.src = "./assets/images/enemy_spawning.png";
+
   var enemy_sleep = new Image();
   enemy_sleep.src = "./assets/images/enemy_sleep.png";
 
@@ -97,6 +100,7 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
     weapon_swing: weapon_swing,
     crib: crib,
     punch: punch,
+    enemy_spawning: enemy_spawning,
     enemy_sleep: enemy_sleep,
     enemy_shadow: enemy_shadow,
     enemy_walk: enemy_walk,
