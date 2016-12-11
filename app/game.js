@@ -43,8 +43,7 @@ define('app/game', [
 
     game.nextLevel = function() {
         if (game.levelIdx === 3) {
-            console.log('SUPER GAME OVER')
-            game.superGameOver = true;
+            //
         } else {
             game.destroy();
             game.init(game.levelIdx + 1, game.playSound);
@@ -56,6 +55,7 @@ define('app/game', [
         game.loadEnemies();
         game.calm = false;
         game.playSound('music_intro', true);
+        game.playSound('music_ending', true);
         game.playSound('darkness')
         this.hasReleasedButton = false;
     }
@@ -68,6 +68,9 @@ define('app/game', [
     game.fadeoutAndShowText = function() {
         if (game.levelIdx === 3) {
             game.ironMaiden = new IronMaiden();
+            game.superGameOver = true;
+            game.playSound('music_ending', true)
+            game.playSound('fear')
         } else {
             game.betweenText = new BetweenText();
             game.fader.deltaOut = 0.6;
@@ -79,7 +82,7 @@ define('app/game', [
         if (game.crib.safe) return;
         game.crib.safeTouch();
         game.calm = true;
-        game.playSound('music_ending');
+        game.playSound('music_ending', false, true);
         game.player.textSwitcher.afterFight();
     }
 
@@ -248,25 +251,51 @@ define('app/game', [
 
     class IronMaiden {
         constructor() {
-            this.spritesheet = SpriteSheet.new(images.iron_maiden_start, {
-                frames: [1000, 1000, 1000],
+            var speed = 300;
+            var callback3 = function() {
+                this.spritesheet = SpriteSheet.new(images.iron_maiden_loop, {
+                    frames: [speed, speed],
+                    x: 0,
+                    y: 0,
+                    width: 1704 / 3,
+                    height: 600,
+                    restart: true,
+                    autoPlay: true
+                });
+            }.bind(this)
+            var callback2 = function() {
+                this.spritesheet = SpriteSheet.new(images.iron_maiden_entry3, {
+                    frames: [speed, speed, speed],
+                    x: 0,
+                    y: 0,
+                    width: 1704 / 3,
+                    height: 600,
+                    restart: false,
+                    autoPlay: true,
+                    callback: callback3
+                });
+            }.bind(this)
+            var callback1 = function() {
+                this.spritesheet = SpriteSheet.new(images.iron_maiden_entry2, {
+                    frames: [speed, speed, speed, speed],
+                    x: 0,
+                    y: 0,
+                    width: 2272 / 4,
+                    height: 600,
+                    restart: false,
+                    autoPlay: true,
+                    callback: callback2
+                });
+            }.bind(this)
+            this.spritesheet = SpriteSheet.new(images.iron_maiden_entry1, {
+                frames: [speed, speed, speed, speed],
                 x: 0,
                 y: 0,
-                width: 300 / 3,
-                height: 100,
+                width: 2272 / 4,
+                height: 600,
                 restart: false,
                 autoPlay: true,
-                callback: function() {
-                    this.spritesheet = SpriteSheet.new(images.iron_maiden_loop, {
-                        frames: [200, 200],
-                        x: 0,
-                        y: 0,
-                        width: 200 / 2,
-                        height: 100,
-                        restart: true,
-                        autoPlay: true
-                    });
-                }.bind(this)
+                callback: callback1
             });
         }
         tick() {
@@ -274,7 +303,7 @@ define('app/game', [
         }
         draw() {
             context.save();
-            context.translate(100, 100)
+            context.translate(100, 0)
             this.spritesheet.draw(context);
             context.restore();
         }
@@ -647,6 +676,7 @@ define('app/game', [
             this.switch_spritesheet.stop();
         }
         draw3d(context) {
+            if (game.superGameOver) return;
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.save();
             context.translate(screenPos.x + 45, screenPos.y - 26)
@@ -1419,7 +1449,7 @@ define('app/game', [
                 gameObjects.push(tile);
               break;
               case 5:
-                var theSwitch = new Switch({
+                game.theSwitch = new Switch({
                     hitbox: {
                         x: colIdx * TILE_SIZE,
                         y: rowIdx * TILE_SIZE,
@@ -1428,7 +1458,7 @@ define('app/game', [
                     },
                     game: game,
                 });
-                gameObjects.push(theSwitch);
+                gameObjects.push(game.theSwitch);
               break;
               case 6:
                 game.ceilinglamp = new Lightsource({
@@ -1457,19 +1487,6 @@ define('app/game', [
                 });
                 gameObjects.push(lamp);
               break;
-              /*case 8:
-                var darkness = new Lightsource({
-                    hitbox: {
-                        x: 0,
-                        y: 0,
-                        width: null,
-                        height: null
-                    },
-                    imageLight: images.darkness_background,
-                    game: game,
-                });
-                gameObjects.push(darkness);
-              break;*/
               case 9:
                 game.crib = new Crib({
                     hitbox: {
@@ -1540,11 +1557,12 @@ define('app/game', [
         game.beforeFight = true;
         game.levelIdx = level;
         game.playSound = playSound;
-        game.playSound('music_intro');
         game.loadLevel();
         game.screenShaker = new ScreenShaker();
         game.fader = new Fader();
         game.fader.fadeIn();
+        game.playSound('music_intro', false, true)
+        game.playSound('music_ending', true)
 
         game.offscreenCanvas = document.createElement('canvas');
         game.offscreenCanvas.width = 800;
@@ -1609,6 +1627,8 @@ define('app/game', [
                 context.restore();
             }
 
+            game.ironMaiden && game.ironMaiden.draw()
+
             context.save()
             context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
 
@@ -1641,7 +1661,8 @@ define('app/game', [
 
             context.globalCompositeOperation = 'darken';
             context.globalAlpha = (game.calm) ? 0.5 : 0.9;
-            context.drawImage(game.offscreenCanvas, 0, 0)
+            if (!game.ironMaiden)
+                context.drawImage(game.offscreenCanvas, 0, 0)
             context.globalAlpha = 1;
 
             context.globalCompositeOperation = 'source-over';
@@ -1654,8 +1675,6 @@ define('app/game', [
             game.offscreenContext.restore();
 
             game.screenShaker.restore(context);
-
-            game.ironMaiden && game.ironMaiden.draw()
 
             if (!game.calm) {
                 context.fillStyle = "black"

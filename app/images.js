@@ -1,6 +1,12 @@
 define('app/images', ['SpriteSheet'], function(SpriteSheet) {
-  var iron_maiden_start = new Image();
-  iron_maiden_start.src = "./assets/images/iron_maiden_start.png";
+  var iron_maiden_entry1 = new Image();
+  iron_maiden_entry1.src = "./assets/images/iron_maiden_entry1.png";
+
+  var iron_maiden_entry2 = new Image();
+  iron_maiden_entry2.src = "./assets/images/iron_maiden_entry2.png";
+
+  var iron_maiden_entry3 = new Image();
+  iron_maiden_entry3.src = "./assets/images/iron_maiden_entry3.png";
 
   var iron_maiden_loop = new Image();
   iron_maiden_loop.src = "./assets/images/iron_maiden_loop.png";
@@ -22,9 +28,6 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
 
   var lightswitch = new Image();
   lightswitch.src = "./assets/images/lightswitch.png";
-
-  var darkness_background = new Image();
-  darkness_background.src = "./assets/images/darkness_background.png";
 
   var rift = new Image();
   rift.src = "./assets/images/rift.png";
@@ -168,7 +171,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   enemy_preparing.src = "./assets/images/enemy_preparing.png";
 
   return {
-    iron_maiden_start: iron_maiden_start,
+    iron_maiden_entry1: iron_maiden_entry1,
+    iron_maiden_entry2: iron_maiden_entry2,
+    iron_maiden_entry3: iron_maiden_entry3,
     iron_maiden_loop: iron_maiden_loop,
     background0: background0,
     background1: background1,
@@ -176,7 +181,6 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
     background3: background3,
     gameover: gameover,
     rift: rift,
-    darkness_background: darkness_background,
     lightswitch: lightswitch,
     ceilinglamp_cone: ceilinglamp_cone,
     ceilinglamp_full: ceilinglamp_full,

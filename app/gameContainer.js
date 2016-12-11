@@ -21,7 +21,7 @@ requirejs([
         }
     });
 
-    var muted = true;
+    var muted = false;
 
     window.addEventListener("keydown", function(e) {
       if (e.keyCode === 77) { // M - mute
@@ -47,6 +47,8 @@ requirejs([
         this.play();
     }, false);
 
+    const fear = new Audio('assets/sounds/fear.ogg')
+    
     const cribdmg = new Audio('assets/sounds/cribdmg.ogg')
     const darkness = new Audio('assets/sounds/darkness.ogg')
     const jump1 = new Audio('assets/sounds/jump1.ogg')
@@ -55,6 +57,7 @@ requirejs([
     const swing = new Audio('assets/sounds/swing.ogg')
     
     const sfxs = {
+        fear: fear,
         music_intro: music_intro,
         music_ending: music_ending,
         cribdmg: cribdmg, 
