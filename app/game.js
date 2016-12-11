@@ -62,6 +62,11 @@ define('app/game', [
 
     game.gameOver = function() {
         game.fader.fadeOut();
+        game.canSkipGameOverScreen = false;
+        game.playSound('darkness')
+        setTimeout(function() {
+            game.canSkipGameOverScreen = true;
+        }.bind(this), 2500)
         //game.playSound('')
     }
 
@@ -1572,6 +1577,7 @@ define('app/game', [
 
         game.superGameOver = false;
         game.banishCounter = 0;
+        game.canSkipGameOverScreen = false;
     }
 
     game.destroy = function() {
@@ -1587,6 +1593,7 @@ define('app/game', [
         game.superGameOver = null;
         game.ironMaiden = null;
         game.banishCounter = null;
+        game.canSkipGameOverScreen = null;
     }
 
     window.game = game
@@ -1599,6 +1606,13 @@ define('app/game', [
             game.fader.tick();
             game.ironMaiden && game.ironMaiden.tick();
             game.betweenText && game.betweenText.tick();
+
+            if (game.endCondition('gameover') && game.canSkipGameOverScreen) {
+                var pad = userInput.getInput(0);
+                if (pad.buttons[2].pressed || Math.abs(pad.axes[0]) > 0 || Math.abs(pad.axes[1]) > 0 ) {
+                    game.init(0, game.playSound);
+                }
+            }
 
             if (game.endCondition() === 'false') {
                 _.each(gameObjects, function(gameObject) {

@@ -21,7 +21,7 @@ requirejs([
         }
     });
 
-    var muted = true;
+    var muted = false;
 
     window.addEventListener("keydown", function(e) {
       if (e.keyCode === 77) { // M - mute
@@ -81,7 +81,7 @@ requirejs([
       }
     }
 
-    game.init(3, playSound);
+    game.init(0, playSound);
 
     var tick = function(delta) {
         if (!running) return;
