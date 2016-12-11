@@ -1,6 +1,15 @@
 define('app/images', ['SpriteSheet'], function(SpriteSheet) {
-  var background = new Image();
-  background.src = "./assets/images/background.png";
+  var background0 = new Image();
+  background0.src = "./assets/images/background0.png";
+
+  var background1 = new Image();
+  background1.src = "./assets/images/background1.png";
+
+  var background2 = new Image();
+  background2.src = "./assets/images/background2.png";
+
+  var background3 = new Image();
+  background3.src = "./assets/images/background3.png";
 
   var gameover = new Image();
   gameover.src = "./assets/images/gameover.png";
@@ -132,7 +141,10 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   enemy_preparing.src = "./assets/images/enemy_preparing.png";
 
   return {
-    background: background,
+    background0: background0,
+    background1: background1,
+    background2: background2,
+    background3: background3,
     gameover: gameover,
     rift: rift,
     darkness_background: darkness_background,

@@ -42,9 +42,12 @@ define('app/game', [
     }
 
     game.nextLevel = function() {
-        console.log('next level');
-        game.destroy();
-        game.init(game.levelIdx + 1, game.playSound);
+        if (game.levelIdx === 3) {
+            console.log('SUPER GAME OVER')
+        } else {
+            game.destroy();
+            game.init(game.levelIdx + 1, game.playSound);
+        }
     }
 
     game.startAction = function() {
@@ -1365,7 +1368,7 @@ define('app/game', [
 
             game.screenShaker.render(context);
 
-            context.drawImage(images.background, 0, 0);
+            context.drawImage(images['background' + game.levelIdx], 0, 0);
 
             if (!DEBUG_NO_2D) {
                 context.save();
