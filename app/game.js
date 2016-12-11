@@ -55,6 +55,7 @@ define('app/game', [
         game.loadEnemies();
         game.calm = false;
         game.playSound('music_intro', true);
+        game.playSound('fightmusic', false, true);
         game.playSound('music_ending', true);
         game.playSound('darkness')
         this.hasReleasedButton = false;
@@ -64,10 +65,10 @@ define('app/game', [
         game.fader.fadeOut();
         game.canSkipGameOverScreen = false;
         game.playSound('darkness')
+        game.playSound('fightmusic', false);
         setTimeout(function() {
             game.canSkipGameOverScreen = true;
         }.bind(this), 2500)
-        //game.playSound('')
     }
 
     game.fadeoutAndShowText = function() {
@@ -89,6 +90,7 @@ define('app/game', [
         game.crib.safeTouch();
         game.calm = true;
         game.playSound('music_ending', false, true);
+        game.playSound('fightmusic', true, false);
         game.player.textSwitcher.afterFight();
     }
 
@@ -1613,6 +1615,7 @@ define('app/game', [
         game.fader = new Fader();
         game.fader.fadeIn();
         game.playSound('music_intro', false, true)
+        game.playSound('fightmusic', true);
         game.playSound('music_ending', true)
 
         game.offscreenCanvas = document.createElement('canvas');

@@ -46,8 +46,14 @@ requirejs([
         this.currentTime = 0;
         this.play();
     }, false);
+    
+    const fightmusic = new Audio('assets/sounds/fightmusic.ogg')
+    fightmusic.addEventListener('ended', function() {
+        this.currentTime = 0;
+        this.play();
+    }, false);
 
-    const fear = new Audio('assets/sounds/fear.ogg')
+    const fear = new Audio('assets/sounds/iron_maiden.ogg')
     
     const cribdmg = new Audio('assets/sounds/cribdmg.ogg')
     const darkness = new Audio('assets/sounds/darkness.ogg')
@@ -62,6 +68,7 @@ requirejs([
     const sfxs = {
         fear: fear,
         music_intro: music_intro,
+        fightmusic: fightmusic,
         music_ending: music_ending,
         cribdmg: cribdmg, 
         childdmg: childdmg, 
