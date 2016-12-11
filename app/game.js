@@ -470,11 +470,13 @@ define('app/game', [
                 [shakeAmount,0],
                 [0,0],
             ];
-            window.addEventListener("keydown", function(e) {
-                if (e.keyCode === 74) { //j
-                    this.shake();
-                }
-            }.bind(this))
+            if (DEBUG_KEYBOARD) {
+                window.addEventListener("keydown", function(e) {
+                    if (e.keyCode === 74) { //j
+                        this.shake();
+                    }
+                }.bind(this))
+            }
         }
         shake() {
             if (this.idx === 0) {
@@ -1703,14 +1705,14 @@ define('app/game', [
                 context.fillStyle = "black"
                 context.fillRect(22, 22, 296, 26)
                 context.fillStyle = "blue"
-                context.fillRect(24, 24, (game.crib.hp / 15) * 292, 22)
+                context.fillRect(24, 24, Math.max((game.crib.hp / 15) * 292, 0), 22)
 
                 context.fillStyle = "white"
                 context.fillRect(320 + 20, 20, 300, 30)
                 context.fillStyle = "black"
                 context.fillRect(320 + 22, 22, 296, 26)
                 context.fillStyle = "red"
-                context.fillRect(320 + 24, 24, (game.player.hp / 10) * 292, 22)
+                context.fillRect(320 + 24, 24, Math.max((game.player.hp / 10) * 292, 0), 22)
             }
 
             var fade = game.fader.getFade();
