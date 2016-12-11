@@ -861,7 +861,7 @@ define('app/game', [
                 }
             } else {
                 //before
-                if (this.counter > 50 && this.idx < this.texts.before.length - 1) { // && 
+                if (this.counter > 270 && this.idx < this.texts.before.length - 1) { // && 
                     this.counter = 0;
                     this.idx++;
                 }
@@ -1176,7 +1176,7 @@ define('app/game', [
               case 6:
                 game.ceilinglamp = new Lightsource({
                     hitbox: {
-                        x: 50 * 4,
+                        x: 40 * 4,
                         y: 21 * 4,
                         width: null,
                         height: null
@@ -1190,7 +1190,7 @@ define('app/game', [
               case 7:
                 var lamp = new Decor({
                     hitbox: {
-                        x: 76 * 4,
+                        x: 66 * 4,
                         y: 11 * 4,
                         width: null,
                         height: null
