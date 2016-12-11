@@ -173,6 +173,9 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
   var enemy_preparing = new Image();
   enemy_preparing.src = "./assets/images/enemy_preparing.png";
 
+  var enemy_preparing_mask = new Image();
+  enemy_preparing_mask.src = "./assets/images/enemy_preparing_mask.png";
+
   return {
     iron_maiden_entry1: iron_maiden_entry1,
     iron_maiden_entry2: iron_maiden_entry2,
@@ -236,6 +239,7 @@ define('app/images', ['SpriteSheet'], function(SpriteSheet) {
     enemy_hurt: enemy_hurt,
     enemy_attack: enemy_attack,
     enemy_jump: enemy_jump,
-    enemy_preparing: enemy_preparing
+    enemy_preparing: enemy_preparing,
+    enemy_preparing_mask: enemy_preparing_mask
   }
 })

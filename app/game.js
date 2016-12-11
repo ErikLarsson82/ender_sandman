@@ -791,9 +791,16 @@ define('app/game', [
             this.calm_spritesheet.tick();
             this.action_spritesheet.tick();
         }
+        draw3dMask(context) {
+            if (game.calm) return;
+
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x - 110, screenPos.y - 180)
+            context.drawImage(images.player_light, 0, 0)
+            context.restore();
+        }
         draw3d() {
-            //var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            //context.drawImage(images.crib, screenPos.x - 50, screenPos.y - 50);
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
             context.save();
             context.translate(screenPos.x - 50, screenPos.y - 50)
@@ -1028,6 +1035,15 @@ define('app/game', [
 
             if (this.state === 'hurt') this.shaker.restore(context);
             context.globalAlpha = 1;
+        }
+        draw3dMask(context) {
+            if (this.state !== 'preparing') return;
+
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x, screenPos.y - 52)
+            context.drawImage(images.enemy_preparing_mask, 0, 0)
+            context.restore();
         }
         draw3dRunning() {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
@@ -1431,6 +1447,13 @@ define('app/game', [
                 }
             this.game.attemptMove(this, attemptedHitBox);
         }
+        draw3dMask(context) {
+            var screenPos = game.convertToScreenCoordinates(this.hitbox)
+            context.save();
+            context.translate(screenPos.x - 110, screenPos.y - 180)
+            context.drawImage(images.player_light, 0, 0)
+            context.restore();
+        }
         draw3d(context) {
             //var screenPos = game.convertToScreenCoordinates(this.hitbox)            
             //context.drawImage(images.weapon_swing, screenPos.x, screenPos.y - images.weapon_swing.height + 20);
@@ -1660,7 +1683,6 @@ define('app/game', [
                 context.save();
                 context.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
                 context.transform(1, 0, 0.25, 0.5, 0, 0);
-                //context.scale(4,4)
                 _.each(gameObjects, function(gameObject) {
                     gameObject.draw2d(context);
                 });
@@ -1686,9 +1708,11 @@ define('app/game', [
                 gameObject.drawDecor(context);
             });
 
+            game.offscreenContext.globalCompositeOperation = 'source-over';
             game.offscreenContext.fillStyle = "black";
             game.offscreenContext.fillRect(0, 0, 800, 600);
 
+            game.offscreenContext.globalCompositeOperation = 'lighten';
             game.offscreenContext.save()
             game.offscreenContext.translate(0 - TILE_SIZE, (46 * 4) - (TILE_SIZE / 2));
             _.each(gameObjects, function(gameObject) {
@@ -1700,7 +1724,8 @@ define('app/game', [
             });
 
             context.globalCompositeOperation = 'darken';
-            context.globalAlpha = (game.calm) ? 0.5 : 0.9;
+            var first = (game.crib.safe) ? 0 : 0.5;
+            context.globalAlpha = (game.calm) ? first : 0.9;
             if (!game.ironMaiden)
                 context.drawImage(game.offscreenCanvas, 0, 0)
             context.globalAlpha = 1;
