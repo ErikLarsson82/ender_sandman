@@ -21,9 +21,7 @@ define('app/game', [
 
     const TILE_SIZE = 14 * 4;
     var gameObjects = [];
-    var game = {
-        calm: true,
-    }
+    var game = {}
 
     game.distance = function(obj1, obj2) {
         const dx = obj2.x - obj1.x
@@ -38,20 +36,24 @@ define('app/game', [
     game.endCondition = function() {
         if (game.crib.hp <= 0) return 'gameover';
         if (game.player.hp <= 0) return 'gameover';
-        if (game.calm === false && game.crib.safe === true && game.countEnemies() <= 0) return 'win';
+        if (game.calm === false && game.crib.safe === true && game.countSpawnsAndEnemies() <= 0) return 'win';
 
         return 'false';
     }
 
+    game.nextLevel = function() {
+        console.log('next level');
+        game.destroy();
+        game.init(game.levelIdx + 1, game.playSound);
+    }
+
     game.startAction = function() {
-        game.player.textSwitcher.end();
+        game.player.textSwitcher.preFight();
         game.loadEnemies();
         game.calm = false;
         game.playSound('music_intro', true);
         game.playSound('darkness')
-        this.hasReleasedButton = false;    
-
-        game.startAction = function() {}
+        this.hasReleasedButton = false;
     }
 
     game.gameOver = function() {
@@ -59,15 +61,22 @@ define('app/game', [
         //game.playSound('')
     }
 
-    game.gameWon = function() {
-        game.crib.safeTouch();
-        game.safeKiddo = new SafeKiddo();
-        game.playSound('music_ending');
+    game.fadeoutAndShowText = function() {
+        game.betweenText = new BetweenText();
+        game.fader.deltaOut = 0.6;
+        game.fader.fadeOut();
     }
 
-    game.countEnemies = function() {
+    game.gameWon = function() {
+        game.crib.safeTouch();
+        game.playSound('music_ending');
+        game.player.textSwitcher.afterFight();
+    }
+
+    game.countSpawnsAndEnemies = function() {
         return _.filter(gameObjects, function(item) {
-            return (item instanceof Enemy);
+            return  (item instanceof Spawner && item.enemies > 0) || 
+                    (item instanceof Enemy);
         }).length;
     }
     game.isInIgnoreFilter = function(mover, item) {
@@ -156,7 +165,7 @@ define('app/game', [
         if (game.isOfTypes(collider, collidee, Player, Crib)) {
             var player = game.getOfType(collider, collidee, Player);
             var crib = game.getOfType(collider, collidee, Crib);
-            if (game.countEnemies() === 0) {
+            if (game.countSpawnsAndEnemies() === 0) {
                 game.gameWon();
             }
         }
@@ -220,6 +229,26 @@ define('app/game', [
                 scroller.active = true;
             }
         })
+    }
+
+    class BetweenText {
+        constructor() {
+            this.counter = 0;
+            this.render = false;
+        }
+        tick() {
+            this.counter++;
+            if (this.counter > 400 / 20) {
+                game.nextLevel()
+            } else if (this.counter > 300 / 20) {
+                this.render = false;
+            } else if (this.counter > 200 / 20) {
+                this.render = true;
+            }
+        }
+        draw(context) {
+            (this.render) ? context.drawImage(images.text6, 66 * 4, 66 * 4) : null;
+        }
     }
 
     class Fader {
@@ -422,7 +451,7 @@ define('app/game', [
             this.isStatic = false;
             this.isColliding = false;
             this.name = "Spawner";
-            this.enemies = 3;
+            this.enemies = 1;
             this.spawning = 1000 - (Math.random() * 300);
             this.rift_spritesheet = SpriteSheet.new(images.rift, {
                 frames: [100, 100, 100, 100, 100, 100],
@@ -525,16 +554,6 @@ define('app/game', [
             context.translate(screenPos.x + 45, screenPos.y - 26)
             this.switch_spritesheet.draw(context);
             context.restore();
-        }
-    }
-
-    class SafeKiddo {
-        constructor() {
-            this.x = 70;
-            this.y = 250;
-        }
-        draw(context) {
-            context.drawImage(images.safe_kiddo, this.x, this.y);
         }
     }
 
@@ -843,12 +862,17 @@ define('app/game', [
                     images.text2,
                     images.text3
                 ],
-                during: images.text4
+                during: images.text4,
+                after: images.text5,
             }
             this.counter = 0;
         }
-        end() {
+        preFight() {
             this.idx = -1;
+            this.counter = 0;
+        }
+        afterFight() {
+            this.idx = 1000;
             this.counter = 0;
         }
         tick() {
@@ -859,20 +883,29 @@ define('app/game', [
                     this.idx = 999;
                     this.tick = function() {}
                 }
+            } else if (this.idx === 1000) {
+                //after fight
+                if (this.counter > 200) {
+                    this.counter = 0;
+                    this.idx = 1001;
+                    game.fadeoutAndShowText();
+                }
             } else {
-                //before
-                if (this.counter > 270 && this.idx < this.texts.before.length - 1) { // && 
+                //before fight
+                if (this.counter > 270 && this.idx < this.texts.before.length - 1) {
                     this.counter = 0;
                     this.idx++;
                 }
             }
         }
         renderText(context, pos) {
-            if (this.idx === 999) return;
+            if (this.idx === 999 || this.idx === 1001) return;
 
             if (this.idx === -1) {
                 context.drawImage(this.texts.during, pos.x, pos.y);
-            } else {
+            } else if (this.idx === 1000) {
+                context.drawImage(this.texts.after, pos.x, pos.y);
+            } else{
                 context.drawImage(this.texts.before[this.idx], pos.x, pos.y);
             }
         }
@@ -1277,28 +1310,49 @@ define('app/game', [
       })
     }
 
-    return {
-        init: function(playSound) {
-            game.playSound = playSound;
-            game.playSound('music_intro');
-            game.loadLevel();
-            game.screenShaker = new ScreenShaker();
-            game.fader = new Fader();
-            game.fader.fadeIn();
+    game.init = function(level, playSound) {
+        gameObjects = [];
+        game.calm = true;
+        game.levelIdx = level;
+        game.playSound = playSound;
+        game.playSound('music_intro');
+        game.loadLevel();
+        game.screenShaker = new ScreenShaker();
+        game.fader = new Fader();
+        game.fader.fadeIn();
 
-            game.offscreenCanvas = document.createElement('canvas');
-            game.offscreenCanvas.width = 800;
-            game.offscreenCanvas.height = 600;
-            game.offscreenContext = game.offscreenCanvas.getContext('2d');
-        },
+        game.offscreenCanvas = document.createElement('canvas');
+        game.offscreenCanvas.width = 800;
+        game.offscreenCanvas.height = 600;
+        game.offscreenContext = game.offscreenCanvas.getContext('2d');
+    }
+
+    game.destroy = function() {
+        game.fader = null;
+        game.calm = null;
+        game.betweenText = null;
+        game.ceilinglamp = null;
+        game.crib = null;
+        game.hasReleasedButton = null;
+        game.player = null;
+        game.screenShaker = null;
+    }
+
+    window.game = game
+
+    return {
+        init: game.init,
         tick: function(delta) {
 
             game.fader.tick();
+            game.betweenText && game.betweenText.tick();
 
             if (game.endCondition() === 'false') {
                 _.each(gameObjects, function(gameObject) {
                     gameObject.tick(delta);
                 });
+            } else {
+                game.player.tick(delta);
             }
 
             gameObjects = _.filter(gameObjects, function(gameObject) {
@@ -1384,8 +1438,6 @@ define('app/game', [
             });
             game.offscreenContext.restore();
 
-            game.safeKiddo && game.safeKiddo.draw(context);
-
             game.screenShaker.restore(context);
 
             var fade = game.fader.getFade();
@@ -1398,6 +1450,8 @@ define('app/game', [
             if (game.endCondition() === 'gameover') {
                 context.drawImage(images.gameover, 102, 228);
             }
+
+            game.betweenText && game.betweenText.draw(context);
         }
     }
 });
