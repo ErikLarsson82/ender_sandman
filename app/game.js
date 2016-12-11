@@ -413,7 +413,7 @@ define('app/game', [
             this.enemies = 3;
             this.spawning = 1000 - (Math.random() * 300);
             this.rift_spritesheet = SpriteSheet.new(images.rift, {
-                frames: [300, 300, 300, 300, 300, 300],
+                frames: [100, 100, 100, 100, 100, 100],
                 x: 0,
                 y: 0,
                 width: 408 / 6,
@@ -1035,13 +1035,11 @@ define('app/game', [
             context.globalAlpha = 1;
         }
         draw3dMask(context) {
-            //context.globalAlpha = 0.6;
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            context.beginPath();
-            context.arc(screenPos.x + 30, screenPos.y - 30, 90, 0, 2 * Math.PI, false);
-            context.fillStyle = 'gray';
-            context.fill();
-            context.globalAlpha = 1;
+            context.save();
+            context.translate(screenPos.x - 110, screenPos.y - 180)
+            context.drawImage(images.player_light, 0, 0)
+            context.restore();
         }
         draw3dTextoverlay() {
             var screenPos = game.convertToScreenCoordinates(this.hitbox)

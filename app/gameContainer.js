@@ -22,7 +22,7 @@ requirejs([
     });
 
     var muted = true;
-    
+
     window.addEventListener("keydown", function(e) {
       if (e.keyCode === 77) { // M - mute
         muted = !muted
