@@ -1170,16 +1170,16 @@ define('app/game', [
                 frames: [200, 200],
                 x: 0,
                 y: 0,
-                width: 136 / 2,
+                width: 128 / 2,
                 height: 84,
                 restart: true,
                 autoPlay: true
             });
             this.swing_spritesheet = SpriteSheet.new(images.player_swing, {
-                frames: [200, 200],
+                frames: [100, 100, 100],
                 x: 0,
                 y: 0,
-                width: 136 / 2,
+                width: 192 / 3,
                 height: 84,
                 restart: false,
                 autoPlay: false,
@@ -1189,7 +1189,7 @@ define('app/game', [
                 frames: [400, 400],
                 x: 0,
                 y: 0,
-                width: 136 / 2,
+                width: 128 / 2,
                 height: 84,
                 restart: true,
                 autoPlay: true
@@ -1397,6 +1397,15 @@ define('app/game', [
             super(config);
             this.color = "#00FF00"
             this.name = "Punch"
+            this.spriteSheet = SpriteSheet.new(images.weapon_swing, {
+                frames: [40, 40, 40, 40],
+                x: 0,
+                y: 0,
+                width: 256 / 4,
+                height: 84,
+                restart: true,
+                autoPlay: true
+            });
             this.counter = new TimedAction(300, function() {
                 this.destroy();
             }.bind(this));
@@ -1406,6 +1415,7 @@ define('app/game', [
             }
         }
         tick() {
+            this.spriteSheet.tick();
             this.counter.tick();
             this.movement.x = this.movement.x * 0.8;
             this.movement.y = this.movement.y * 0.8;
@@ -1418,8 +1428,14 @@ define('app/game', [
             this.game.attemptMove(this, attemptedHitBox);
         }
         draw3d(context) {
+            //var screenPos = game.convertToScreenCoordinates(this.hitbox)            
+            //context.drawImage(images.weapon_swing, screenPos.x, screenPos.y - images.weapon_swing.height + 20);
+
             var screenPos = game.convertToScreenCoordinates(this.hitbox)
-            context.drawImage(images.weapon_swing, screenPos.x, screenPos.y - images.weapon_swing.height + 20);
+            context.save();
+            context.translate(screenPos.x, screenPos.y - images.weapon_swing.height + 20)
+            this.spriteSheet.draw(context);
+            context.restore();
         }
     }
 
